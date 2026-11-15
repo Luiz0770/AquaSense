@@ -1,0 +1,121 @@
+/// <reference types="node" />
+/**
+ * Verificação rápida da lógica pura (sem celular): máscaras, validadores, limiares,
+ * simulador IoT e alertas. Rode com: npm run check
+ */
+import assert from 'node:assert/strict';
+import { maskCep, maskDateTime, maskPhone, maskHeight } from '../src/utils/masks';
+import {
+  parseDateTime,
+  validateCep,
+  validateDateTime,
+  validateEmail,
+  validateHeight,
+  validatePassword,
+  validatePhone,
+} from '../src/utils/validators';
+import { levelFor, LIMITS } from '../src/services/iot/thresholds';
+import { initialReading, nextReading, PROFILES } from '../src/services/iot/simulator';
+import { buildAlert } from '../src/services/iot/alerts';
+import type { Scenario } from '../src/types';
+
+let n = 0;
+const ok = (name: string, fn: () => void) => {
+  fn();
+  n += 1;
+  console.log(`ok  ${name}`);
+};
+
+ok('máscara de CEP', () => {
+  assert.equal(maskCep('01000000'), '01000-000');
+  assert.equal(maskCep('01000-0'), '01000-0');
+  assert.equal(maskCep('abc0100'), '0100');
+  assert.equal(maskCep('010000009999'), '01000-000');
+});
+
+ok('máscara de telefone', () => {
+  assert.equal(maskPhone('11900001111'), '(11) 90000-1111');
+  assert.equal(maskPhone('1130001111'), '(11) 3000-1111');
+  assert.equal(maskPhone('1'), '(1');
+  assert.equal(maskPhone(''), '');
+});
+
+ok('máscara de data e hora', () => {
+  assert.equal(maskDateTime('131120262210'), '13/11/2026 22:10');
+  assert.equal(maskDateTime('1311'), '13/11');
+  assert.equal(maskHeight('1a5x'), '15');
+});
+
+ok('validadores', () => {
+  assert.equal(validateCep('01000-000'), null);
+  assert.match(validateCep('0100') ?? '', /8 números/);
+  assert.equal(validateEmail('a@b.co'), null);
+  assert.notEqual(validateEmail('a@b'), null);
+  assert.equal(validatePassword('123456'), null);
+  assert.notEqual(validatePassword('123'), null);
+  assert.equal(validatePhone('(11) 90000-0000'), null);
+  assert.notEqual(validatePhone('(11) 9000'), null);
+  assert.equal(validateHeight('15'), null);
+  assert.notEqual(validateHeight('abc'), null);
+  assert.notEqual(validateHeight('0'), null);
+  assert.notEqual(validateHeight('301'), null);
+});
+
+ok('data e hora: existência e futuro', () => {
+  assert.ok(parseDateTime('13/11/2026 22:10'));
+  assert.equal(parseDateTime('31/02/2026 10:00'), null);
+  assert.equal(parseDateTime('13/11/2026 25:00'), null);
+  const now = new Date(2026, 10, 15, 12, 0);
+  assert.equal(validateDateTime('15/11/2026 11:00', now), null);
+  assert.match(validateDateTime('16/11/2026 11:00', now) ?? '', /futuro/);
+});
+
+ok('limiares de demonstração', () => {
+  assert.equal(LIMITS.atencao, 20);
+  assert.equal(levelFor(19), 'normal');
+  assert.equal(levelFor(20), 'atencao');
+  assert.equal(levelFor(39), 'atencao');
+  assert.equal(levelFor(40), 'alerta');
+  assert.equal(levelFor(69), 'alerta');
+  assert.equal(levelFor(70), 'critico');
+});
+
+ok('simulador: formato da leitura e limites', () => {
+  const r = nextReading(initialReading(), 'moderada');
+  assert.deepEqual(Object.keys(r).sort(), ['chuvaMm', 'id', 'nivelCm', 'sensorId', 'timestamp']);
+  assert.ok(r.nivelCm >= 0 && r.nivelCm <= 100);
+});
+
+ok('simulador: chuva forte chega ao Crítico; sem chuva volta ao Normal', () => {
+  let r = initialReading();
+  for (let i = 0; i < 25; i++) r = nextReading(r, 'forte');
+  assert.equal(levelFor(r.nivelCm), 'critico');
+  for (let i = 0; i < 25; i++) r = nextReading(r, 'sem_chuva');
+  assert.equal(levelFor(r.nivelCm), 'normal');
+});
+
+ok('simulador: chuva moderada fica em Atenção ou Normal, sem chegar ao Crítico', () => {
+  let r = initialReading();
+  for (let i = 0; i < 200; i++) {
+    r = nextReading(r, 'moderada');
+    assert.notEqual(levelFor(r.nivelCm), 'critico');
+  }
+});
+
+ok('simulador: chuva em mm dentro da faixa do cenário', () => {
+  (Object.keys(PROFILES) as Scenario[]).forEach((s) => {
+    let r = initialReading();
+    for (let i = 0; i < 50; i++) {
+      r = nextReading(r, s);
+      assert.ok(r.chuvaMm >= PROFILES[s].rainMin && r.chuvaMm <= PROFILES[s].rainMax, `${s}: ${r.chuvaMm}`);
+    }
+  });
+});
+
+ok('alertas: texto de subida e de descida', () => {
+  const r = { ...initialReading(), nivelCm: 27 };
+  assert.equal(buildAlert('normal', 'atencao', r).mensagem, 'Mudou para Atenção, com 27 cm.');
+  assert.equal(buildAlert('atencao', 'normal', { ...r, nivelCm: 18 }).mensagem, 'Voltou para Normal, com 18 cm.');
+});
+
+console.log(`\n${n} verificações passaram.`);
