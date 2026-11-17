@@ -65,4 +65,5 @@ export interface Settings {
   fontSize: FontSize;
   highContrast: boolean;
   reduceMotion: boolean;
+  noticeDismissed: boolean;
 }

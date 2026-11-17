@@ -35,7 +35,7 @@ export function useSourcesHref() {
  * aviso de mudança de estado, conteúdo rolável e a faixa de aviso fixa.
  */
 export function Screen({ children, notice = false, back = false, hero = false, contentStyle }: Props) {
-  const { palette } = useTheme();
+  const { palette, settings, dismissNotice } = useTheme();
   const { user } = useAuth();
   const { banner, dismissBanner } = useMonitoring();
   const router = useRouter();
@@ -48,19 +48,8 @@ export function Screen({ children, notice = false, back = false, hero = false, c
     <View style={[styles.root, { backgroundColor: palette.bg }]}>
       <StatusBar style={hero ? 'light' : 'dark'} />
       <SafeAreaView edges={back ? ['top', 'bottom'] : ['top']} style={[styles.root, hero && { backgroundColor: heroTheme.head }]}>
+        <View style={styles.root}>
         <View style={hero ? { backgroundColor: heroTheme.head } : undefined}>
-        {banner ? (
-          <AlertBanner
-            level={banner.para}
-            nivelCm={banner.nivelCm}
-            onClose={dismissBanner}
-            onSources={() => {
-              dismissBanner();
-              router.push(sources);
-            }}
-          />
-        ) : null}
-
         <View style={styles.header}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flexShrink: 1 }}>
             {back ? (
@@ -106,7 +95,7 @@ export function Screen({ children, notice = false, back = false, hero = false, c
           <FadeIn style={[{ gap: 14 }, contentStyle]}>{children}</FadeIn>
         </ScrollView>
 
-        {notice ? (
+        {notice && !settings.noticeDismissed ? (
           <View style={{ backgroundColor: palette.bg }}>
           <View style={[styles.notice, { backgroundColor: palette.accentBg, borderColor: palette.accent }]}>
             <Icon name="info" size={20} color={palette.accent} />
@@ -123,9 +112,33 @@ export function Screen({ children, notice = false, back = false, hero = false, c
                 Fontes
               </AppText>
             </Pressable>
+            <Pressable
+              onPress={dismissNotice}
+              accessibilityRole="button"
+              accessibilityLabel="Fechar aviso"
+              hitSlop={4}
+              style={{ width: 36, height: 48, alignItems: 'center', justifyContent: 'center' }}
+            >
+              <Icon name="close" size={20} color={palette.accent} />
+            </Pressable>
           </View>
           </View>
         ) : null}
+
+        {banner ? (
+          <View style={styles.bannerOverlay} pointerEvents="box-none">
+            <AlertBanner
+              level={banner.para}
+              nivelCm={banner.nivelCm}
+              onClose={dismissBanner}
+              onSources={() => {
+                dismissBanner();
+                router.push(sources);
+              }}
+            />
+          </View>
+        ) : null}
+        </View>
       </SafeAreaView>
     </View>
   );
@@ -133,6 +146,14 @@ export function Screen({ children, notice = false, back = false, hero = false, c
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
+  bannerOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 50,
+    elevation: 50,
+  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',

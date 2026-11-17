@@ -5,6 +5,7 @@ export const defaultSettings: Settings = {
   fontSize: 'normal',
   highContrast: false,
   reduceMotion: false,
+  noticeDismissed: false,
 };
 
 export async function loadSettings(): Promise<Settings> {

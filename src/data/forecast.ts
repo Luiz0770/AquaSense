@@ -8,6 +8,8 @@ export interface HourForecast {
   /** Chance de chuva (%). */
   prob: number;
   mm: number;
+  /** Vem pronto quando os dados são de uma API; sem isso o card deriva de prob/mm. */
+  icon?: ForecastIcon;
 }
 
 export interface DayForecast {
@@ -16,9 +18,10 @@ export interface DayForecast {
   mm: number;
   min: number;
   max: number;
+  icon?: ForecastIcon;
 }
 
-const DIAS = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb'];
+export const DIAS = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb'];
 
 export function buildForecast(now: Date = new Date()): { hours: HourForecast[]; days: DayForecast[] } {
   const h0 = now.getHours();
@@ -40,7 +43,7 @@ export function buildForecast(now: Date = new Date()): { hours: HourForecast[]; 
   };
 }
 
-export type ForecastIcon = 'partly_cloudy_day' | 'cloud' | 'thunderstorm' | 'rainy';
+export type ForecastIcon = 'wb_sunny' | 'partly_cloudy_day' | 'cloud' | 'thunderstorm' | 'rainy';
 
 export function forecastIcon(prob: number, mm: number): ForecastIcon {
   if (prob < 30) return 'partly_cloudy_day';

@@ -27,7 +27,7 @@ O cidadão consulta o nível da água de um ponto monitorado, recebe alertas por
 | Perfil | Tela | O que faz |
 | --- | --- | --- |
 | Todos | Login e Cadastro | E-mail e senha com validação; cadastro com telefone (máscara) e perfil (cidadão ou agente) |
-| Cidadão | Início | Holograma da rua (casas, pessoa de 1,70 m e água subindo), nível em cm, chuva, tendência, faixas de risco e previsão de chuva (demonstração) |
+| Cidadão | Início | Holograma da rua (casas, pessoa de 1,70 m e água subindo), nível em cm, chuva, tendência, faixas de risco e previsão de chuva (Open-Meteo) |
 | Cidadão | Histórico | Chuva e nível em 7 dias ou 24 h e alagamentos registrados (dados de demonstração) |
 | Todos | Sensor | Holograma do nível, gráficos ao vivo, últimas leituras e JSON bruto do ESP32 simulado (uma a cada 5 s) |
 | Cidadão | Relatar | Tipo do relato, foto (demonstração), CEP, data/hora, altura (cm) e detalhes, com máscaras e validação; lista "Meus relatos" |
@@ -70,6 +70,17 @@ npm run check       # testes da lógica (máscaras, validadores, simulador, aler
 ```
 
 Para ver o alerta de nível, abra o perfil de agente, vá em **Simulação** e escolha **Forte**: em cerca de um minuto o estado sobe até Crítico.
+
+## API de previsão
+
+A previsão de chuva do card "Previsão de chuva" (tela Início) usa a API gratuita [Open-Meteo](https://open-meteo.com/) (sem chave, sem cadastro), com `fetch` nativo em `src/services/weather.ts`.
+
+- **Localização aproximada e privacidade**: a previsão usa, por padrão, a localização aproximada do usuário (permissão em primeiro plano, via `expo-location`); o bairro/cidade dele aparece no hero da tela Início no lugar do nome do ponto piloto. A localização nunca é salva nem enviada para nenhum servidor além das coordenadas arredondadas para 2 casas decimais na própria chamada à Open-Meteo — nunca é registrada em log. Sem permissão, com a permissão negada, com o GPS desligado ou em caso de erro, a previsão cai automaticamente para as coordenadas fixas do ponto PT-07 (Ipiranga/SP), sem nenhuma ação do usuário. No Android só é solicitada localização aproximada (coarse); em nenhuma plataforma é pedida permissão de localização em segundo plano.
+- As coordenadas do ponto PT-07 (fallback) ficam em `WEATHER_LAT`/`WEATHER_LON` em `src/services/weather.ts` e podem ser trocadas sem alterar código, definindo `EXPO_PUBLIC_WEATHER_LAT` e `EXPO_PUBLIC_WEATHER_LON` num arquivo `.env`.
+- O hook `useForecast()` (`src/hooks/useForecast.ts`) mantém os dados em cache por 10 minutos por local (chave = coordenadas arredondadas) e busca de novo ao voltar para a aba Início.
+- Sem internet ou se a API falhar, o card usa o último dado em cache ou a previsão simulada de `src/data/forecast.ts`, com o aviso discreto "Sem conexão · exibindo dados simulados".
+
+Dados meteorológicos: © [Open-Meteo.com](https://open-meteo.com/), licença [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
 
 ## Arquitetura
 

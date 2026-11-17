@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Defs, RadialGradient, Rect, Stop } from 'react-native-svg';
@@ -7,7 +7,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useMonitoring } from '@/contexts/MonitoringContext';
 import { useTheme } from '@/contexts/SettingsContext';
 import { pilotPoint } from '@/data/pilotPoint';
-import { buildForecast, forecastIcon } from '@/data/forecast';
+import { forecastIcon } from '@/data/forecast';
+import { useForecast } from '@/hooks/useForecast';
 import { LEVEL_ORDER } from '@/services/iot/thresholds';
 import { formatTime } from '@/utils/format';
 import { cardShadow, chart, gradients, hero, levelStyle, stage } from '@/styles/theme';
@@ -58,7 +59,7 @@ export default function InicioScreen() {
   const { palette, fontScale } = useTheme();
   const { current, level, readings } = useMonitoring();
   const [fcTab, setFcTab] = useState<FcTab>('horas');
-  const forecast = useMemo(() => buildForecast(), []);
+  const { data: forecast, loading: fcLoading, error: fcError, userPlaceName } = useForecast();
   const risk = levelStyle[level];
   const trend = trendOf(readings);
   const firstName = (user?.name ?? '').split(' ')[0] || 'Olá';
@@ -97,7 +98,7 @@ export default function InicioScreen() {
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
                 <Icon name="location_on" size={20 * fontScale} color={stage.cyan} />
                 <AppText size={14} weight={700} color={stage.muted}>
-                  {pilotPoint.name}
+                  {userPlaceName ?? pilotPoint.name}
                 </AppText>
               </View>
             </View>
@@ -133,7 +134,7 @@ export default function InicioScreen() {
 
       <LevelCard level={level} title={risk.label} subtitle={risk.desc} />
 
-      <View accessibilityRole="list" accessibilityLabel="Faixas de risco" style={{ flexDirection: 'row', gap: 6 }}>
+      {/* <View accessibilityRole="list" accessibilityLabel="Faixas de risco" style={{ flexDirection: 'row', gap: 6 }}>
         {LEVEL_ORDER.map((k) => {
           const l = levelStyle[k];
           const on = k === level;
@@ -172,7 +173,7 @@ export default function InicioScreen() {
             </View>
           );
         })}
-      </View>
+      </View> */}
 
       <Card radius={24} style={{ gap: 12 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
@@ -198,7 +199,17 @@ export default function InicioScreen() {
           </AppText>
         </View>
 
-        {fcTab === 'horas' ? (
+        {fcLoading ? (
+          <View
+            accessible
+            accessibilityLabel="Carregando previsão de chuva"
+            style={{ paddingVertical: 28, alignItems: 'center' }}
+          >
+            <AppText size={14} muted>
+              Carregando previsão…
+            </AppText>
+          </View>
+        ) : fcTab === 'horas' ? (
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -16 }} contentContainerStyle={{ gap: 8, paddingHorizontal: 16, paddingTop: 2, paddingBottom: 6 }}>
             {forecast.hours.map((f, i) => {
               const strong = f.prob >= 60;
@@ -212,7 +223,7 @@ export default function InicioScreen() {
                   <AppText size={14} weight={700} muted numberOfLines={1}>
                     {i === 0 ? 'Em 1 h' : `${pad(f.hora)}h`}
                   </AppText>
-                  <Icon name={forecastIcon(f.prob, f.mm)} filled size={28} color={chart.forecast} />
+                  <Icon name={f.icon ?? forecastIcon(f.prob, f.mm)} filled size={28} color={chart.forecast} />
                   <View style={{ width: 10, height: 44, borderRadius: 5, backgroundColor: palette.accentBg, justifyContent: 'flex-end', overflow: 'hidden' }}>
                     <Gradient colors={gradients.rainBar} style={{ height: `${f.prob}%`, borderRadius: 5 }} />
                   </View>
@@ -234,7 +245,7 @@ export default function InicioScreen() {
                 <AppText size={15} weight={700} style={{ width: 64 }}>
                   {f.dia}
                 </AppText>
-                <Icon name={forecastIcon(f.prob, f.mm / 3)} filled size={26} color={chart.forecast} />
+                <Icon name={f.icon ?? forecastIcon(f.prob, f.mm / 3)} filled size={26} color={chart.forecast} />
                 <View style={{ flex: 1, gap: 3 }}>
                   <View style={{ height: 8, borderRadius: 4, backgroundColor: palette.accentBg, overflow: 'hidden' }}>
                     <LinearGradient colors={gradients.rainBar} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={{ width: `${f.prob}%`, height: '100%', borderRadius: 4 }} />
@@ -249,8 +260,13 @@ export default function InicioScreen() {
             ))}
           </View>
         )}
+        {fcError ? (
+          <AppText size={13} muted accessibilityLabel="Sem conexão, exibindo dados simulados">
+            Sem conexão · exibindo dados simulados
+          </AppText>
+        ) : null}
         <AppText size={14} muted>
-          Previsão de demonstração · fonte: API de tempo
+          Fonte: Open-Meteo (CC BY 4.0)
         </AppText>
       </Card>
 

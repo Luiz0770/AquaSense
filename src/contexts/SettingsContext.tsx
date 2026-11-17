@@ -14,6 +14,7 @@ interface SettingsValue {
   setFontSize: (size: FontSize) => void;
   setHighContrast: (on: boolean) => void;
   setReduceMotion: (on: boolean) => void;
+  dismissNotice: () => void;
 }
 
 const SettingsContext = createContext<SettingsValue | null>(null);
@@ -63,6 +64,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
       setFontSize: (fontSize) => update({ fontSize }),
       setHighContrast: (on) => update({ highContrast: on }),
       setReduceMotion: (on) => update({ reduceMotion: on }),
+      dismissNotice: () => update({ noticeDismissed: true }),
     }),
     [settings, loaded, update],
   );

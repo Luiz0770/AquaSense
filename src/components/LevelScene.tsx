@@ -27,6 +27,9 @@ const PXC = 0.62;
 const WAVE_H = 28;
 const WAVE_MEAN = 14;
 const MAX_CM = 130;
+/** Tamanho da pessoa de referência (reduzido para não competir com as casas do fundo) e ajuste para os pés tocarem o chão. */
+const PERSON_H = 80;
+const PERSON_FOOT_GAP = 6;
 const RISE = Easing.bezier(0.3, 0.7, 0.3, 1);
 
 const fmtN = (n: number) => String(n).replace('.', ',');
@@ -254,10 +257,10 @@ export function LevelScene({ level, rain }: { level: number; rain: number }) {
         </View>
       ))}
 
-      <View pointerEvents="none" style={{ position: 'absolute', left: '60%', marginLeft: -62, width: 124, bottom: G0 - 10, alignItems: 'center' }}>
-        <Icon name="man" filled size={125} color={hero.person} />
+      <View pointerEvents="none" style={{ position: 'absolute', left: '60%', marginLeft: -40, width: 80, bottom: G0 - PERSON_FOOT_GAP, alignItems: 'center' }}>
+        <Icon name="man" filled size={PERSON_H} color={hero.person} />
       </View>
-      <View pointerEvents="none" style={{ position: 'absolute', left: '60%', marginLeft: -40, width: 80, bottom: G0 + 170 * PXC + 6 }}>
+      <View pointerEvents="none" style={{ position: 'absolute', left: '60%', marginLeft: -40, width: 80, bottom: G0 - PERSON_FOOT_GAP + PERSON_H + 6 }}>
         <AppText font="display" weight={700} size={14} lh={1.2} color={hero.person} align="center" allowFontScaling={false}>
           1,70 m
         </AppText>
