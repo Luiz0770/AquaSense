@@ -2,7 +2,7 @@ import React from 'react';
 import { Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '@/contexts/SettingsContext';
-import { cardShadow, levelStyle, reportStatusStyle } from '@/styles/theme';
+import { cardShadow, hero, levelStyle, reportStatusStyle } from '@/styles/theme';
 import type { Level, ReportStatus } from '@/types';
 import { AppText } from './AppText';
 import { Icon, type IconName } from './Icon';
@@ -34,6 +34,8 @@ export function IconBadge({
   iconSize,
   radius,
   shadow,
+  shadowColor = '#0052CC',
+  filled,
 }: {
   icon: IconName;
   colors: readonly [string, string];
@@ -41,13 +43,16 @@ export function IconBadge({
   iconSize?: number;
   radius?: number;
   shadow?: boolean;
+  /** Cor da sombra (nos níveis, a cor `line`). */
+  shadowColor?: string;
+  filled?: boolean;
 }) {
   const { palette } = useTheme();
   return (
     <View
       style={[
         { width: size, height: size, borderRadius: radius ?? Math.round(size / 3) },
-        shadow && palette.shadows && { shadowColor: '#0052CC', shadowOpacity: 0.25, shadowRadius: 14, shadowOffset: { width: 0, height: 6 }, elevation: 3 },
+        shadow && palette.shadows && { shadowColor, shadowOpacity: shadowColor === '#0052CC' ? 0.25 : 0.9, shadowRadius: 14, shadowOffset: { width: 0, height: 6 }, elevation: 3 },
       ]}
     >
       <LinearGradient
@@ -56,7 +61,7 @@ export function IconBadge({
         end={{ x: 1, y: 1 }}
         style={{ flex: 1, borderRadius: radius ?? Math.round(size / 3), alignItems: 'center', justifyContent: 'center' }}
       >
-        <Icon name={icon} size={iconSize ?? Math.round(size * 0.56)} color="#FFFFFF" />
+        <Icon name={icon} filled={filled} size={iconSize ?? Math.round(size * 0.56)} color="#FFFFFF" />
       </LinearGradient>
     </View>
   );
@@ -221,7 +226,16 @@ export function SwitchRow({
   );
 }
 
-/** Selo de estado do nível (ícone preenchido + palavra, nunca só cor). */
+/** Chip do ícone do nível: gradiente do nível, ícone branco preenchido e sombra na cor `line`. */
+export function LevelBadge({ level, size = 46, iconSize, radius }: { level: Level; size?: number; iconSize?: number; radius?: number }) {
+  const l = levelStyle[level];
+  return <IconBadge icon={l.icon} colors={l.grad} size={size} iconSize={iconSize} radius={radius ?? Math.round(size / 2.9)} shadow shadowColor={l.line} filled />;
+}
+
+/**
+ * Selo de estado do nível sobre o fundo escuro: vidro translúcido
+ * (fundo branco 12 %, borda branca 30 %) e ícone na cor `glow` do nível.
+ */
 export function RiskChip({ level, size = 16 }: { level: Level; size?: number }) {
   const { fontScale } = useTheme();
   const l = levelStyle[level];
@@ -229,12 +243,58 @@ export function RiskChip({ level, size = 16 }: { level: Level; size?: number }) 
     <View
       accessible
       accessibilityLabel={`Estado: ${l.label}`}
-      style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 6, paddingLeft: 8, paddingRight: 12, borderRadius: 20, backgroundColor: l.bg, alignSelf: 'flex-start' }}
+      style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 6, paddingLeft: 8, paddingRight: 14, borderRadius: 20, backgroundColor: hero.glassBg, borderWidth: 1, borderColor: hero.glassBorder, alignSelf: 'flex-start' }}
     >
-      <Icon name={l.icon} filled size={22 * fontScale} color={l.fg} />
-      <AppText size={size} weight={700} color={l.fg} lh={1.2}>
+      <Icon name={l.icon} filled size={22 * fontScale} color={l.glow} />
+      <AppText size={size} weight={700} color="#FFFFFF" lh={1.2}>
         {l.label}
       </AppText>
+    </View>
+  );
+}
+
+/** Cartão de nível: branco, borda fina, sombra suave, chip em gradiente e título na cor `fg`. */
+export function LevelCard({
+  level,
+  title,
+  subtitle,
+  chip = 46,
+  radius = 24,
+  style,
+  right,
+  subtitleColor,
+}: {
+  level: Level;
+  title: string;
+  subtitle?: string;
+  chip?: number;
+  radius?: number;
+  style?: StyleProp<ViewStyle>;
+  right?: React.ReactNode;
+  subtitleColor?: string;
+}) {
+  const { palette } = useTheme();
+  const l = levelStyle[level];
+  return (
+    <View
+      style={[
+        { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, borderRadius: radius, backgroundColor: palette.surface, borderWidth: 1, borderColor: palette.line },
+        cardShadow(palette, 0.07),
+        style,
+      ]}
+    >
+      <LevelBadge level={level} size={chip} />
+      <View style={{ flex: 1, gap: 2 }}>
+        <AppText font="display" weight={700} color={palette.shadows ? l.fg : palette.ink} lh={1.3}>
+          {title}
+        </AppText>
+        {subtitle ? (
+          <AppText size={subtitleColor ? 14 : 15} weight={subtitleColor ? 700 : 400} color={subtitleColor} muted={!subtitleColor}>
+            {subtitle}
+          </AppText>
+        ) : null}
+      </View>
+      {right}
     </View>
   );
 }

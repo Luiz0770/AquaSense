@@ -73,7 +73,7 @@ export function BarChart({
         {(thresholds ?? []).map(([p, c]) => (
           <View key={p} pointerEvents="none" style={{ position: 'absolute', left: 0, right: 0, bottom: `${p}%`, height: 2 }}>
             <Svg width="100%" height={2}>
-              <Line x1="0" y1="1" x2="100%" y2="1" stroke={c} strokeWidth={2} strokeDasharray="6 4" />
+              <Line x1="0" y1="1" x2="100%" y2="1" stroke={c} strokeWidth={1.5} strokeDasharray="5 4" />
             </Svg>
           </View>
         ))}

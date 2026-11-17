@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Animated, Easing, type StyleProp, type ViewStyle } from 'react-native';
 import { useTheme } from '@/contexts/SettingsContext';
 
@@ -13,10 +13,12 @@ export function useLoop(
   { delayMs = 0, easing = Easing.linear, rest = 0, pingPong = false }: { delayMs?: number; easing?: (v: number) => number; rest?: number; pingPong?: boolean } = {},
 ) {
   const { reduceMotion } = useTheme();
-  const value = useRef(new Animated.Value(rest)).current;
+  const [value] = useState(() => new Animated.Value(rest));
   // A curva fica numa ref: quem chama costuma criar Easing.in(...) a cada render, e isso não deve reiniciar o loop.
   const ease = useRef(easing);
-  ease.current = easing;
+  useEffect(() => {
+    ease.current = easing;
+  });
 
   useEffect(() => {
     if (reduceMotion) {
@@ -44,7 +46,7 @@ const ENTER_EASE = Easing.out(Easing.cubic);
 
 export function useEnter(durationMs: number, delayMs = 0, easing = ENTER_EASE) {
   const { reduceMotion } = useTheme();
-  const value = useRef(new Animated.Value(reduceMotion ? 1 : 0)).current;
+  const [value] = useState(() => new Animated.Value(reduceMotion ? 1 : 0));
   useEffect(() => {
     if (reduceMotion) {
       value.setValue(1);

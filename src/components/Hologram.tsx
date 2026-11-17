@@ -1,13 +1,12 @@
-import React, { useEffect, useMemo, useRef } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Animated, Easing, StyleSheet, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import Svg, { Defs, Ellipse, G, Line, LinearGradient as SvgLinear, Path, Polygon, RadialGradient, Rect, Stop } from 'react-native-svg';
+import Svg, { Defs, Ellipse, Line, LinearGradient as SvgLinear, Path, Polygon, RadialGradient, Rect, Stop } from 'react-native-svg';
 import { useTheme } from '@/contexts/SettingsContext';
 import { LIMITS } from '@/services/iot/thresholds';
 import { chart } from '@/styles/theme';
 import { AppText } from './AppText';
-import { Icon } from './Icon';
-import { Glow, HoloIn, useLoop } from './motion';
+import { Glow, useLoop } from './motion';
 import { WaveStrip } from './Surfaces';
 
 const fmtN = (n: number) => String(n).replace('.', ',');
@@ -22,7 +21,7 @@ const RISE = Easing.bezier(0.3, 0.7, 0.3, 1);
 /** Acompanha um número com a transição de 1,2 s do design (a água sobe e desce suave). */
 function useSmooth(target: number) {
   const { reduceMotion } = useTheme();
-  const v = useRef(new Animated.Value(target)).current;
+  const [v] = useState(() => new Animated.Value(target));
   useEffect(() => {
     if (reduceMotion) {
       v.setValue(target);
@@ -178,185 +177,6 @@ export function Holo({ level, H = 200, W = 108 }: { level: number; H?: number; W
         </View>
       ))}
     </View>
-  );
-}
-
-const PX_CM = 0.54;
-const GROUND = 18;
-const SCENE_H = 200;
-
-/** Casa holográfica com telhado, janelas e porta. */
-function House({ x, w, hh, o, d }: { x: number; w: number; hh: number; o: number; d: number }) {
-  const line = 'rgba(124,243,255,0.8)';
-  const roof = w * 0.42;
-  return (
-    <HoloIn delayMs={d * 1000} style={{ position: 'absolute', left: `${x}%`, bottom: GROUND, width: w, height: hh, opacity: o }}>
-      <Svg style={{ position: 'absolute', left: -6, bottom: hh }} width={w + 12} height={roof}>
-        <Defs>
-          <SvgLinear id={`roof${x}`} x1="0" y1="0" x2="0" y2="1">
-            <Stop offset="0" stopColor="#7CF3FF" stopOpacity={0.5} />
-            <Stop offset="1" stopColor="#008CFF" stopOpacity={0.18} />
-          </SvgLinear>
-        </Defs>
-        <Polygon points={`${(w + 12) / 2},0 ${w + 12},${roof} 0,${roof}`} fill={`url(#roof${x})`} />
-      </Svg>
-      <View style={{ ...FILL, borderWidth: 1.5, borderColor: line, backgroundColor: 'rgba(0,140,255,0.14)', overflow: 'hidden' }}>
-        {Array.from({ length: Math.floor(hh / 10) }, (_, i) => (
-          <View key={i} style={{ position: 'absolute', left: 0, right: 0, bottom: i * 10, height: 1, backgroundColor: 'rgba(124,243,255,0.1)' }} />
-        ))}
-      </View>
-      <Glow style={{ position: 'absolute', top: 12, left: '16%', width: '24%', height: 16, borderWidth: 1, borderColor: line, backgroundColor: 'rgba(255,214,102,0.45)' }} durationMs={3000} />
-      <View style={{ position: 'absolute', top: 12, right: '16%', width: '24%', height: 16, borderWidth: 1, borderColor: line, backgroundColor: 'rgba(154,246,255,0.35)' }} />
-      <View
-        style={{
-          position: 'absolute',
-          bottom: 0,
-          left: (w - Math.max(14, w * 0.24)) / 2,
-          width: Math.max(14, w * 0.24),
-          height: Math.min(hh * 0.55, 60),
-          borderWidth: 1.5,
-          borderBottomWidth: 0,
-          borderColor: line,
-          backgroundColor: 'rgba(4,29,58,0.5)',
-        }}
-      />
-    </HoloIn>
-  );
-}
-
-/** aqDrop: gota de chuva caindo inclinada. */
-function Drop({ left, durationMs, delayMs }: { left: number; durationMs: number; delayMs: number }) {
-  const t = useLoop(durationMs, { delayMs, rest: -1 });
-  return (
-    <Animated.View
-      style={{
-        position: 'absolute',
-        top: 0,
-        left: `${left}%`,
-        width: 1.5,
-        height: 14,
-        opacity: t.interpolate({ inputRange: [-1, 0, 0.15, 1], outputRange: [0, 0, 0.8, 0.2] }),
-        transform: [{ translateY: t.interpolate({ inputRange: [-1, 0, 1], outputRange: [-30, -30, 220] }) }, { rotate: '12deg' }],
-      }}
-    >
-      <LinearGradient colors={['rgba(154,246,255,0)', 'rgba(154,246,255,0.9)']} style={{ flex: 1 }} />
-    </Animated.View>
-  );
-}
-
-/**
- * Holograma da rua (tela Início): três casas, uma pessoa de 1,70 m,
- * chuva proporcional aos mm/h e a água subindo com as marcas dos limiares.
- */
-export function CityHolo({ level, rain }: { level: number; rain: number }) {
-  const wh = GROUND + Math.min(level, 140) * PX_CM;
-  const water = useSmooth(SCENE_H - wh);
-  const drops = Math.min(26, Math.round(rain * 1.2));
-  const gridV = useMemo(() => Array.from({ length: 24 }, (_, i) => i * 22), []);
-  const gridH = useMemo(() => Array.from({ length: 10 }, (_, i) => i * 22), []);
-
-  return (
-    <HoloIn
-      durationMs={1600}
-      style={{ height: SCENE_H, marginHorizontal: -16, overflow: 'hidden' }}
-    >
-      <View
-        accessible
-        accessibilityRole="image"
-        accessibilityLabel={`Holograma da rua com casas e uma pessoa de 1,70 m. A água está em ${fmtN(level)} centímetros.`}
-        style={StyleSheet.absoluteFill}
-      >
-        {/* Grade e brilho do chão, que somem nas bordas */}
-        <Svg style={StyleSheet.absoluteFill} width="100%" height="100%">
-          <Defs>
-            <RadialGradient id="floor" cx="0.5" cy="1" rx="0.7" ry="0.55">
-              <Stop offset="0" stopColor="#00B8D9" stopOpacity={0.32} />
-              <Stop offset="0.75" stopColor="#00B8D9" stopOpacity={0} />
-            </RadialGradient>
-          </Defs>
-          <Rect x="0" y="0" width="100%" height="100%" fill="url(#floor)" />
-          <G opacity={0.06}>
-            {gridV.map((x) => (
-              <Line key={`v${x}`} x1={x} y1={0} x2={x} y2={SCENE_H} stroke="#7CF3FF" strokeWidth={1} />
-            ))}
-            {gridH.map((y) => (
-              <Line key={`h${y}`} x1={0} y1={y} x2={600} y2={y} stroke="#7CF3FF" strokeWidth={1} />
-            ))}
-          </G>
-        </Svg>
-
-        <View style={StyleSheet.absoluteFill}>
-          {Array.from({ length: drops }, (_, i) => (
-            <Drop key={i} left={(i * 37) % 100} durationMs={800 + (i % 5) * 120} delayMs={((i * 0.13) % 1) * 1000} />
-          ))}
-        </View>
-
-        <House x={8} w={58} hh={112} o={0.75} d={0.3} />
-        <House x={27} w={78} hh={148} o={0.95} d={0.5} />
-        <House x={72} w={64} hh={120} o={0.8} d={0.7} />
-
-        <View style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: GROUND, backgroundColor: 'rgba(124,243,255,0.18)', borderTopWidth: 1.5, borderTopColor: 'rgba(124,243,255,0.7)' }} />
-
-        <HoloIn delayMs={900} style={{ position: 'absolute', left: '60%', marginLeft: -55, width: 110, bottom: GROUND - 9, alignItems: 'center' }}>
-          <Icon name="man" filled size={110} color="rgba(154,246,255,0.95)" />
-        </HoloIn>
-        <HoloIn delayMs={1100} style={{ position: 'absolute', left: '60%', marginLeft: -40, width: 80, bottom: GROUND + 96 }}>
-          <AppText font="display" weight={700} size={14} lh={1.2} color="#CFF8FF" align="center" allowFontScaling={false}>
-            1,70 m
-          </AppText>
-        </HoloIn>
-
-        {/* Água */}
-        <Animated.View style={{ position: 'absolute', left: 0, right: 0, top: 0, height: SCENE_H + 20, zIndex: 2, transform: [{ translateY: water }] }}>
-          <LinearGradient colors={['rgba(56,214,255,0.62)', 'rgba(0,102,224,0.78)']} style={StyleSheet.absoluteFill} />
-          <WaveStrip fill="#9AF6FF" height={10} durationMs={6000} reverse opacity={0.5} style={{ top: -8 }} />
-          <WaveStrip fill="rgba(56,214,255,0.75)" height={10} durationMs={3500} style={{ top: -8 }} />
-        </Animated.View>
-
-        {/* Limiares (sobre a água) */}
-        {TICKS.map(([v, c]) => (
-          <View key={v} pointerEvents="none" style={{ position: 'absolute', left: 0, right: 0, bottom: GROUND + v * PX_CM, height: 2, zIndex: 3, opacity: 0.9 }}>
-            <Svg width="100%" height={2}>
-              <Line x1="0" y1="1" x2="100%" y2="1" stroke={c} strokeWidth={1.5} strokeDasharray="5 4" />
-            </Svg>
-            <AppText
-              font="display"
-              weight={700}
-              size={14}
-              lh={1.2}
-              color={c}
-              allowFontScaling={false}
-              style={[
-                { position: 'absolute', top: -19, textShadowColor: 'rgba(0,0,0,0.8)', textShadowRadius: 3, textShadowOffset: { width: 0, height: 1 } },
-                v === LIMITS.alerta ? { left: 22 } : { right: 22 },
-              ]}
-            >
-              {`${v} cm`}
-            </AppText>
-          </View>
-        ))}
-
-        <View style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, zIndex: 4 }} pointerEvents="none">
-          <ScanLine height={SCENE_H} band={30} durationMs={4000} />
-        </View>
-
-        {/* Bordas que somem no fundo do cartão */}
-        <LinearGradient
-          pointerEvents="none"
-          colors={['rgba(4,39,77,1)', 'rgba(4,39,77,0)']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 0.12, y: 0 }}
-          style={[StyleSheet.absoluteFill, { zIndex: 5, opacity: 0.85 }]}
-        />
-        <LinearGradient
-          pointerEvents="none"
-          colors={['rgba(6,62,115,0)', 'rgba(6,62,115,1)']}
-          start={{ x: 0.88, y: 0 }}
-          end={{ x: 1, y: 0 }}
-          style={[StyleSheet.absoluteFill, { zIndex: 5, opacity: 0.85 }]}
-        />
-      </View>
-    </HoloIn>
   );
 }
 

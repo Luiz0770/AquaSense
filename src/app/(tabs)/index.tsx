@@ -1,5 +1,7 @@
 import React, { useMemo, useState } from 'react';
-import { ScrollView, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import Svg, { Defs, RadialGradient, Rect, Stop } from 'react-native-svg';
 import { useRouter } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
 import { useMonitoring } from '@/contexts/MonitoringContext';
@@ -8,25 +10,34 @@ import { pilotPoint } from '@/data/pilotPoint';
 import { buildForecast, forecastIcon } from '@/data/forecast';
 import { LEVEL_ORDER } from '@/services/iot/thresholds';
 import { formatTime } from '@/utils/format';
-import { chart, gradients, levelStyle, stage } from '@/styles/theme';
+import { cardShadow, chart, gradients, hero, levelStyle, stage } from '@/styles/theme';
 import { AppText } from '@/components/AppText';
-import { IconBadge, RiskChip, Segmented, ShortcutTile, StageChip } from '@/components/Controls';
-import { CityHolo } from '@/components/Hologram';
-import { Icon } from '@/components/Icon';
+import { IconBadge, LevelBadge, LevelCard, RiskChip, Segmented, ShortcutTile } from '@/components/Controls';
+import { depthOf, HERO_H, LevelScene } from '@/components/LevelScene';
+import { Icon, type IconName } from '@/components/Icon';
 import { Screen } from '@/components/Screen';
-import { Card, StageCard } from '@/components/Surfaces';
+import { Card, Gradient } from '@/components/Surfaces';
 import type { Reading } from '@/types';
 
 const fmtN = (n: number) => String(n).replace('.', ',');
 const pad = (n: number) => String(n).padStart(2, '0');
 
-/** Profundidade em linguagem do dia a dia (referência: pessoa de 1,70 m). */
-function depthOf(n: number): string {
-  if (n < 15) return 'Abaixo da calçada';
-  if (n < 45) return 'Abaixo do joelho';
-  if (n < 60) return 'Na altura do joelho';
-  if (n < 95) return 'Acima do joelho';
-  return 'Na altura da cintura';
+/** Pílula branca logo abaixo do hero (profundidade e chuva). */
+function InfoPill({ icon, label }: { icon: IconName; label: string }) {
+  const { palette, fontScale } = useTheme();
+  return (
+    <View
+      style={[
+        { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 6, paddingLeft: 8, paddingRight: 12, borderRadius: 20, backgroundColor: palette.surface, borderWidth: 1, borderColor: palette.line },
+        cardShadow(palette, 0.08),
+      ]}
+    >
+      <Icon name={icon} size={22 * fontScale} color={palette.accent} />
+      <AppText size={14} weight={700}>
+        {label}
+      </AppText>
+    </View>
+  );
 }
 
 /** Tendência comparando com a leitura de uns 20 s atrás. */
@@ -62,49 +73,65 @@ export default function InicioScreen() {
   })();
 
   return (
-    <Screen notice>
-      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 4, gap: 8 }}>
-        <AppText font="display" size={22} color={palette.navy} lh={1.25} style={{ flexShrink: 1 }}>
-          {`Olá, ${firstName}`}
-        </AppText>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-          <Icon name="location_on" size={20 * fontScale} color={palette.accent} />
-          <AppText size={14} weight={700} muted>
-            {pilotPoint.name}
-          </AppText>
-        </View>
-      </View>
+    <Screen notice hero>
+      <View style={{ height: HERO_H, marginTop: -6, marginHorizontal: -16, overflow: 'hidden' }}>
+        <LinearGradient colors={hero.colors} locations={hero.locations} style={StyleSheet.absoluteFill} />
+        <Svg style={StyleSheet.absoluteFill} width="100%" height="100%" preserveAspectRatio="none" viewBox="0 0 100 100">
+          <Defs>
+            <RadialGradient id="heroGlow" cx="0.82" cy="0.52" rx="0.7" ry="0.45" fx="0.82" fy="0.52">
+              <Stop offset="0" stopColor={hero.glow} stopOpacity={1} />
+              <Stop offset="0.7" stopColor={hero.glow} stopOpacity={0} />
+            </RadialGradient>
+          </Defs>
+          <Rect x="0" y="0" width="100" height="100" fill="url(#heroGlow)" />
+        </Svg>
 
-      <StageCard glow={{ cx: 0.85, cy: 0, rx: 1.2, ry: 0.8, stop: 0.55 }} padding={16} style={{ paddingBottom: 14, gap: 12 }}>
-        <View style={{ flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', gap: 10 }}>
-          <View accessible accessibilityLabel={`Nível da água na rua: ${fmtN(current.nivelCm)} centímetros`}>
-            <AppText size={14} color={stage.muted}>
+        <LevelScene level={current.nivelCm} rain={current.chuvaMm} />
+
+        <View pointerEvents="box-none" style={{ paddingTop: 6, paddingHorizontal: 20, gap: 14 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 }}>
+            <View style={{ gap: 2, flexShrink: 1 }}>
+              <AppText font="display" weight={600} size={17} lh={1.3} color="#FFFFFF" accessibilityRole="header">
+                {`Olá, ${firstName}`}
+              </AppText>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                <Icon name="location_on" size={20 * fontScale} color={stage.cyan} />
+                <AppText size={14} weight={700} color={stage.muted}>
+                  {pilotPoint.name}
+                </AppText>
+              </View>
+            </View>
+            <RiskChip level={level} />
+          </View>
+
+          <View
+            accessible
+            accessibilityLabel={`Nível da água na rua: ${fmtN(current.nivelCm)} centímetros. ${trend.label}, ${formatTime(current.timestamp)}, leitura simulada.`}
+            style={{ gap: 2, alignSelf: 'flex-start' }}
+          >
+            <AppText size={15} weight={700} color={stage.muted}>
               Nível da água na rua
             </AppText>
-            <AppText font="display" size={40} lh={1.05} color="#FFFFFF" style={{ letterSpacing: -0.8 }}>
+            <AppText font="display" weight={700} size={60} lh={1.05} color="#FFFFFF" style={{ letterSpacing: -1.8 }}>
               {fmtN(current.nivelCm)}
-              <AppText font="display" weight={500} size={18} color={stage.muted}>
+              <AppText font="display" weight={500} size={24} lh={1.05} color={stage.muted} style={{ letterSpacing: 0 }}>
                 {' cm'}
               </AppText>
             </AppText>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 }}>
+              <Icon name={trend.icon} size={22 * fontScale} color={stage.cyan} />
+              <AppText size={14} color={stage.muted2}>{`${trend.label} · ${formatTime(current.timestamp)} · simulado`}</AppText>
+            </View>
           </View>
-          <RiskChip level={level} />
         </View>
+      </View>
 
-        <CityHolo level={current.nivelCm} rain={current.chuvaMm} />
+      <View style={{ marginTop: -40, flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+        <InfoPill icon="accessibility_new" label={depthOf(current.nivelCm)} />
+        <InfoPill icon="rainy" label={`${fmtN(current.chuvaMm)} mm/h`} />
+      </View>
 
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
-          <StageChip icon="accessibility_new" label={depthOf(current.nivelCm)} iconColor={stage.cyan} />
-          <StageChip icon={trend.icon} label={trend.label} iconColor={stage.cyan} />
-          <StageChip icon="rainy" label={`${fmtN(current.chuvaMm)} mm/h`} iconColor={stage.rain} />
-        </View>
-        <View style={{ paddingVertical: 10, paddingHorizontal: 12, borderRadius: 16, backgroundColor: 'rgba(255,255,255,0.1)', borderWidth: 1, borderColor: 'rgba(124,243,255,0.25)' }}>
-          <AppText size={15} color="#FFFFFF">
-            {risk.desc}
-          </AppText>
-        </View>
-        <AppText size={14} color={stage.muted}>{`${formatTime(current.timestamp)} · leitura simulada · ${current.sensorId}`}</AppText>
-      </StageCard>
+      <LevelCard level={level} title={risk.label} subtitle={risk.desc} />
 
       <View accessibilityRole="list" accessibilityLabel="Faixas de risco" style={{ flexDirection: 'row', gap: 6 }}>
         {LEVEL_ORDER.map((k) => {
@@ -115,21 +142,30 @@ export default function InicioScreen() {
               key={k}
               accessible
               accessibilityLabel={`${l.label}, ${l.range}${on ? ', estado atual' : ''}`}
-              style={{
-                flex: 1,
-                minHeight: 64,
-                paddingVertical: 8,
-                paddingHorizontal: 4,
-                borderRadius: 16,
-                borderWidth: 2,
-                borderColor: on ? l.fg : palette.line,
-                backgroundColor: on ? l.bg : palette.surface,
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 2,
-              }}
+              style={[
+                {
+                  flex: 1,
+                  minHeight: 78,
+                  paddingVertical: 8,
+                  paddingHorizontal: 4,
+                  borderRadius: 20,
+                  borderWidth: 1,
+                  borderColor: on ? (palette.shadows ? l.line : l.fg) : palette.line,
+                  backgroundColor: on ? l.bg : palette.surface,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 6,
+                },
+                on && palette.shadows && { shadowColor: l.line, shadowOpacity: 0.9, shadowRadius: 18, shadowOffset: { width: 0, height: 8 }, elevation: 3 },
+              ]}
             >
-              <Icon name={l.icon} filled size={24 * fontScale} color={on ? l.fg : palette.inkMuted} />
+              {on ? (
+                <LevelBadge level={k} size={34} iconSize={20} radius={12} />
+              ) : (
+                <View style={{ width: 34, height: 34, borderRadius: 12, backgroundColor: l.bg, alignItems: 'center', justifyContent: 'center' }}>
+                  <Icon name={l.icon} filled size={20} color={l.fg} />
+                </View>
+              )}
               <AppText size={14} weight={700} color={on ? l.fg : palette.inkMuted} numberOfLines={1}>
                 {l.label}
               </AppText>
@@ -178,7 +214,7 @@ export default function InicioScreen() {
                   </AppText>
                   <Icon name={forecastIcon(f.prob, f.mm)} filled size={28} color={chart.forecast} />
                   <View style={{ width: 10, height: 44, borderRadius: 5, backgroundColor: palette.accentBg, justifyContent: 'flex-end', overflow: 'hidden' }}>
-                    <View style={{ height: `${f.prob}%`, backgroundColor: chart.rain, borderRadius: 5 }} />
+                    <Gradient colors={gradients.rainBar} style={{ height: `${f.prob}%`, borderRadius: 5 }} />
                   </View>
                   <AppText size={15} weight={700}>{`${f.prob}%`}</AppText>
                   <AppText size={14} muted numberOfLines={1}>{`${fmtN(f.mm)} mm`}</AppText>
@@ -201,7 +237,7 @@ export default function InicioScreen() {
                 <Icon name={forecastIcon(f.prob, f.mm / 3)} filled size={26} color={chart.forecast} />
                 <View style={{ flex: 1, gap: 3 }}>
                   <View style={{ height: 8, borderRadius: 4, backgroundColor: palette.accentBg, overflow: 'hidden' }}>
-                    <View style={{ width: `${f.prob}%`, height: '100%', backgroundColor: chart.rain, borderRadius: 4 }} />
+                    <LinearGradient colors={gradients.rainBar} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={{ width: `${f.prob}%`, height: '100%', borderRadius: 4 }} />
                   </View>
                   <AppText size={14} muted>{`${f.prob}% · ${fmtN(f.mm)} mm`}</AppText>
                 </View>

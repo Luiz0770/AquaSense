@@ -59,7 +59,9 @@ export function MonitoringProvider({ children }: { children: React.ReactNode }) 
 
   // A simulação lê sempre o estado mais novo por esta ref, sem recriar o intervalo a cada leitura.
   const live = useRef({ readings, scenario, alerts });
-  live.current = { readings, scenario, alerts };
+  useEffect(() => {
+    live.current = { readings, scenario, alerts };
+  });
 
   useEffect(() => {
     let alive = true;

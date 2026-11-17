@@ -3,10 +3,10 @@ import { ScrollView, View } from 'react-native';
 import { useTheme } from '@/contexts/SettingsContext';
 import { floodEvents, history, type HistoryPeriod } from '@/data/history';
 import { levelFor, LIMITS } from '@/services/iot/thresholds';
-import { chart, gradients, levelStyle } from '@/styles/theme';
+import { cardShadow, chart, gradients, levelStyle } from '@/styles/theme';
 import { AppText } from '@/components/AppText';
 import { BarChart } from '@/components/Charts';
-import { ScreenTitle, SectionTitle, Segmented } from '@/components/Controls';
+import { LevelBadge, ScreenTitle, SectionTitle, Segmented } from '@/components/Controls';
 import { Icon } from '@/components/Icon';
 import { Screen } from '@/components/Screen';
 import { Card, Gradient } from '@/components/Surfaces';
@@ -95,19 +95,23 @@ export default function HistoricoScreen() {
       <SectionTitle>Alagamentos registrados</SectionTitle>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -16 }} contentContainerStyle={{ gap: 10, paddingHorizontal: 16, paddingTop: 2, paddingBottom: 8 }}>
         {floodEvents.map((e) => {
-          const l = levelStyle[levelFor(e.nivel)];
+          const lv = levelFor(e.nivel);
+          const l = levelStyle[lv];
           return (
             <View
               key={e.id}
               accessible
               accessibilityLabel={`${e.dia} de ${e.mes}: ${l.label}, ${e.nivel} centímetros`}
-              style={{ width: 128 * Math.min(fontScale, 1.15), padding: 12, borderRadius: 20, backgroundColor: l.bg, borderWidth: 2, borderColor: l.fg, gap: 6 }}
+              style={[
+                { width: 136 * Math.min(fontScale, 1.15), padding: 12, borderRadius: 22, backgroundColor: palette.surface, borderWidth: 1, borderColor: palette.line, gap: 8 },
+                cardShadow(palette),
+              ]}
             >
-              <Icon name={l.icon} filled size={28 * fontScale} color={l.fg} />
-              <AppText font="display" weight={700} color={l.fg}>
+              <LevelBadge level={lv} size={40} iconSize={24} radius={14} />
+              <AppText font="display" weight={700} color={palette.shadows ? l.fg : palette.ink}>
                 {l.label}
               </AppText>
-              <AppText size={14} color={palette.ink}>{`${e.dia} ${e.mes} · ${e.nivel} cm`}</AppText>
+              <AppText size={14} muted>{`${e.dia} ${e.mes} · ${e.nivel} cm`}</AppText>
             </View>
           );
         })}

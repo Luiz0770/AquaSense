@@ -4,12 +4,17 @@ import { useTheme } from '@/contexts/SettingsContext';
 import { levelStyle } from '@/styles/theme';
 import type { Level } from '@/types';
 import { AppText } from './AppText';
+import { Button } from './Button';
+import { LevelBadge } from './Controls';
 import { Icon } from './Icon';
 import { FadeIn } from './motion';
 
 const fmtN = (n: number) => String(n).replace('.', ',');
 
-/** Aviso de mudança de estado do design: ícone, estado e nível, fechar e "Ver canais oficiais". */
+/**
+ * Aviso de mudança de estado (design v2): cartão branco com borda fina na cor `line`,
+ * sombra suave, chip do nível em gradiente, título na cor `fg`, fechar e "Ver canais oficiais".
+ */
 export function AlertBanner({
   level,
   nivelCm,
@@ -21,24 +26,32 @@ export function AlertBanner({
   onClose: () => void;
   onSources: () => void;
 }) {
-  const { palette, fontScale } = useTheme();
+  const { palette } = useTheme();
   const l = levelStyle[level];
   return (
     <FadeIn
       style={[
-        { marginHorizontal: 12, marginTop: 4, marginBottom: 8, padding: 12, borderRadius: 20, backgroundColor: l.bg, borderWidth: 2, borderColor: l.fg, gap: 10 },
-        palette.shadows && { shadowColor: '#041D3A', shadowOpacity: 0.18, shadowRadius: 24, shadowOffset: { width: 0, height: 10 }, elevation: 6 },
+        {
+          marginHorizontal: 12,
+          marginTop: 6,
+          marginBottom: 10,
+          padding: 12,
+          borderRadius: 24,
+          backgroundColor: palette.surface,
+          borderWidth: 1,
+          borderColor: palette.shadows ? l.line : palette.line,
+          gap: 10,
+        },
+        palette.shadows && { shadowColor: '#041D3A', shadowOpacity: 0.28, shadowRadius: 32, shadowOffset: { width: 0, height: 14 }, elevation: 8 },
       ]}
     >
-      <View accessibilityRole="alert" accessibilityLiveRegion="assertive" style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-        <View style={{ width: 44, height: 44, borderRadius: 14, backgroundColor: l.fg, alignItems: 'center', justifyContent: 'center' }}>
-          <Icon name={l.icon} filled size={26} color="#FFFFFF" />
-        </View>
+      <View accessibilityRole="alert" accessibilityLiveRegion="assertive" style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+        <LevelBadge level={level} size={46} iconSize={26} radius={16} />
         <View style={{ flex: 1 }}>
-          <AppText font="display" size={17} color={l.fg} lh={1.25}>
+          <AppText font="display" size={17} color={palette.shadows ? l.fg : palette.ink} lh={1.3}>
             {`${l.label} · ${fmtN(nivelCm)} cm`}
           </AppText>
-          <AppText size={14} lh={1.3}>
+          <AppText size={14} lh={1.3} muted>
             Estimativa não oficial · simulado
           </AppText>
         </View>
@@ -46,30 +59,13 @@ export function AlertBanner({
           onPress={onClose}
           accessibilityRole="button"
           accessibilityLabel="Fechar aviso"
+          hitSlop={4}
           style={{ width: 48, height: 48, alignItems: 'center', justifyContent: 'center' }}
         >
-          <Icon name="close" size={24} color={l.fg} />
+          <Icon name="close" size={24} color={palette.inkMuted} />
         </Pressable>
       </View>
-      <Pressable
-        onPress={onSources}
-        accessibilityRole="button"
-        style={({ pressed }) => ({
-          minHeight: 48,
-          borderRadius: 14,
-          backgroundColor: l.fg,
-          flexDirection: 'row',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: 8,
-          opacity: pressed ? 0.85 : 1,
-        })}
-      >
-        <Icon name="call" size={20 * fontScale} color="#FFFFFF" />
-        <AppText weight={700} color="#FFFFFF">
-          Ver canais oficiais
-        </AppText>
-      </Pressable>
+      <Button label="Ver canais oficiais" icon="call" onPress={onSources} height={50} display={false} />
     </FadeIn>
   );
 }

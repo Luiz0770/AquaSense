@@ -116,33 +116,64 @@ export const chart = {
   rainLight: '#5AA0FF',
   forecast: '#1457D9',
   /** Linhas tracejadas dos limiares nos gráficos claros. */
-  thresholds: { atencao: '#B07D00', alerta: '#C2560F', critico: '#B3261E' },
+  thresholds: { atencao: '#C28400', alerta: '#D9560F', critico: '#C81E4A' },
   /** Marcas dos limiares no palco escuro. */
-  holoTicks: { atencao: '#FFC94D', alerta: '#FF8A3D', critico: '#FF6B83' },
+  holoTicks: { atencao: '#FFD166', alerta: '#FF9A55', critico: '#FF7A98' },
 } as const;
 
 export interface LevelStyle {
   label: string;
   icon: 'check_circle' | 'info' | 'warning' | 'dangerous';
+  /** Texto do título nos cartões claros. */
   fg: string;
+  /** Fundo suave (faixa ativa). */
   bg: string;
+  /** Cor viva sobre o fundo escuro (ícone do selo de vidro, radar). */
   glow: string;
+  /** Borda fina e cor da sombra do chip. */
+  line: string;
+  /** Gradiente do chip do ícone (135°). */
+  grad: readonly [string, string];
   range: string;
   desc: string;
 }
 
+/** Níveis de alerta (LIM do design v2): verde-água, dourado, laranja terracota, rosa carmim. */
 export const levelStyle: Record<Level, LevelStyle> = {
-  normal: { label: 'Normal', icon: 'check_circle', fg: '#0B6B4F', bg: '#DDF7EE', glow: '#19C59A', range: '0–19 cm', desc: 'Nível da água dentro do esperado.' },
-  atencao: { label: 'Atenção', icon: 'info', fg: '#7A5300', bg: '#FFF2C7', glow: '#FFC94D', range: '20–39 cm', desc: 'A água está subindo. Acompanhe as atualizações.' },
-  alerta: { label: 'Alerta', icon: 'warning', fg: '#9A3B00', bg: '#FFE2CC', glow: '#FF8A3D', range: '40–69 cm', desc: 'Nível alto. Consulte a Defesa Civil (199) antes de sair.' },
-  critico: { label: 'Crítico', icon: 'dangerous', fg: '#A1112E', bg: '#FFDDE3', glow: '#FF4D6A', range: '70 cm ou mais', desc: 'Nível muito alto. Siga a Defesa Civil (199) e o CGE.' },
+  normal: { label: 'Normal', icon: 'check_circle', fg: '#0A6B5C', bg: '#E3F6F2', glow: '#2DD4BF', line: '#BDE6DE', grad: ['#3BDCC6', '#0E9F8E'], range: '0–19 cm', desc: 'Nível da água dentro do esperado.' },
+  atencao: { label: 'Atenção', icon: 'info', fg: '#7A5600', bg: '#FBF0D4', glow: '#FFD166', line: '#EFD79A', grad: ['#FFD166', '#E8A200'], range: '20–39 cm', desc: 'A água está subindo. Acompanhe as atualizações.' },
+  alerta: { label: 'Alerta', icon: 'warning', fg: '#9A3D08', bg: '#FCE5D6', glow: '#FF9A55', line: '#F4C4A3', grad: ['#FFA45F', '#E8590C'], range: '40–69 cm', desc: 'Nível alto. Consulte a Defesa Civil (199) antes de sair.' },
+  critico: { label: 'Crítico', icon: 'dangerous', fg: '#A9123C', bg: '#FADCE4', glow: '#FF7A98', line: '#F0B1C3', grad: ['#FF7A98', '#C2174A'], range: '70 cm ou mais', desc: 'Nível muito alto. Siga a Defesa Civil (199) e o CGE.' },
 };
 
+/** Situação dos relatos (ST do design v2). */
 export const reportStatusStyle: Record<ReportStatus, { label: string; icon: 'schedule' | 'verified' | 'block'; fg: string; bg: string }> = {
   pendente: { label: 'Não verificado', icon: 'schedule', fg: '#33475B', bg: '#E8EEF4' },
-  validado: { label: 'Validado', icon: 'verified', fg: '#0B6B4F', bg: '#DDF7EE' },
-  descartado: { label: 'Descartado', icon: 'block', fg: '#8A1C2E', bg: '#FBE3E7' },
+  validado: { label: 'Validado', icon: 'verified', fg: '#0A6B5C', bg: '#E3F6F2' },
+  descartado: { label: 'Descartado', icon: 'block', fg: '#A9123C', bg: '#FADCE4' },
 };
+
+/** Cabeçalho e hero azul da tela inicial. */
+export const hero = {
+  head: '#04274D',
+  /** Gradiente vertical do hero (#04274D → #063E73 52% → #0A5FA8). */
+  colors: ['#04274D', '#063E73', '#0A5FA8'] as const,
+  locations: [0, 0.52, 1] as const,
+  glow: 'rgba(21,133,216,0.55)',
+  /** Selo de vidro (substitui o backdrop-filter). */
+  glassBg: 'rgba(255,255,255,0.12)',
+  glassBorder: 'rgba(255,255,255,0.3)',
+  /** Contornos da cena. */
+  stroke: 'rgba(255,255,255,0.92)',
+  strokeSoft: 'rgba(255,255,255,0.55)',
+  windowLit: 'rgba(255,214,102,0.6)',
+  person: '#E6FAFF',
+  /** Camadas de onda translúcidas. */
+  waveDeep: 'rgba(45,143,201,0.5)',
+  waveLight: 'rgba(92,208,242,0.5)',
+  /** Marcas de 20/40/70 cm sobre o hero. */
+  ticks: { atencao: '#FFDB85', alerta: '#FFB88A', critico: '#FFA9BE' },
+} as const;
 
 export const space = { 1: 4, 2: 8, 3: 12, 4: 16, 5: 24, 6: 32, touch: 48 } as const;
 export const radius = { sm: 12, md: 16, lg: 20, xl: 24, xxl: 28, pill: 999 } as const;

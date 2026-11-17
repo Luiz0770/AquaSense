@@ -8,9 +8,9 @@ import { pilotPoint } from '@/data/pilotPoint';
 import { SCENARIO_LABEL } from '@/services/iot/simulator';
 import { levelFor } from '@/services/iot/thresholds';
 import { formatTime } from '@/utils/format';
-import { gradients, levelLabel, levelStyle, stage } from '@/styles/theme';
+import { cardShadow, gradients, levelLabel, levelStyle, stage } from '@/styles/theme';
 import { AppText } from '@/components/AppText';
-import { DashedNote, ScreenTitle, SectionTitle } from '@/components/Controls';
+import { DashedNote, LevelBadge, ScreenTitle, SectionTitle } from '@/components/Controls';
 import { Radar } from '@/components/Hologram';
 import { Icon } from '@/components/Icon';
 import { Screen } from '@/components/Screen';
@@ -56,12 +56,16 @@ export default function PainelScreen() {
               disabled={!p.live}
               accessibilityRole={p.live ? 'button' : undefined}
               accessibilityLabel={`${p.name}: ${l.label}, ${fmtN(p.nivel)} centímetros${p.live ? '. Abrir sensor.' : ''}`}
-              style={{ minHeight: 64, paddingVertical: 10, paddingHorizontal: 14, borderRadius: 20, borderWidth: 2, borderColor: l.fg, backgroundColor: l.bg, flexDirection: 'row', alignItems: 'center', gap: 12 }}
+              style={({ pressed }) => [
+                { minHeight: 68, paddingVertical: 10, paddingHorizontal: 14, borderRadius: 22, borderWidth: 1, borderColor: palette.line, backgroundColor: palette.surface, flexDirection: 'row', alignItems: 'center', gap: 12 },
+                cardShadow(palette),
+                pressed && { transform: [{ scale: 0.98 }] },
+              ]}
             >
-              <Icon name={l.icon} filled size={28 * fontScale} color={l.fg} />
+              <LevelBadge level={p.level} size={42} iconSize={24} radius={14} />
               <View style={{ flex: 1 }}>
                 <AppText weight={700}>{p.name}</AppText>
-                <AppText size={14}>{`${l.label} · ${fmtN(p.nivel)} cm`}</AppText>
+                <AppText size={14} weight={700} color={palette.shadows ? l.fg : palette.ink}>{`${l.label} · ${fmtN(p.nivel)} cm`}</AppText>
               </View>
               {p.live ? <Icon name="chevron_right" size={24 * fontScale} color={palette.ink} /> : null}
             </Pressable>
@@ -95,15 +99,17 @@ export default function PainelScreen() {
         <DashedNote icon="hourglass_empty">Nenhuma mudança ainda. Escolha um cenário na aba Simular.</DashedNote>
       ) : (
         alerts.slice(0, 8).map((a) => {
-          const l = levelStyle[a.para];
           return (
             <View
               key={a.id}
               accessible
               accessibilityLabel={`${a.mensagem} Às ${formatTime(a.timestamp)}.`}
-              style={{ backgroundColor: palette.surface, borderWidth: 1, borderColor: palette.line, borderRadius: 18, paddingVertical: 10, paddingHorizontal: 14, flexDirection: 'row', alignItems: 'center', gap: 12 }}
+              style={[
+                { backgroundColor: palette.surface, borderWidth: 1, borderColor: palette.line, borderRadius: 20, paddingVertical: 10, paddingHorizontal: 14, flexDirection: 'row', alignItems: 'center', gap: 12 },
+                cardShadow(palette, 0.06),
+              ]}
             >
-              <Icon name={l.icon} filled size={24 * fontScale} color={l.fg} />
+              <LevelBadge level={a.para} size={38} iconSize={22} radius={13} />
               <View style={{ flex: 1 }}>
                 <AppText weight={700}>{`${levelLabel[a.de]} → ${levelLabel[a.para]}`}</AppText>
                 <AppText size={14} muted>{`${fmtN(a.nivelCm)} cm · ${formatTime(a.timestamp)}`}</AppText>

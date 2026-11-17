@@ -92,7 +92,8 @@ export function SensorScreen() {
           {`Últimas leituras · uma a cada ${READING_INTERVAL_MS / 1000} s`}
         </AppText>
         {readings.slice(0, 5).map((r, i) => {
-          const l = levelStyle[levelFor(r.nivelCm)];
+          const lv = levelFor(r.nivelCm);
+          const l = levelStyle[lv];
           return (
             <View
               key={r.id}
@@ -104,10 +105,12 @@ export function SensorScreen() {
                 {formatTime(r.timestamp)}
               </AppText>
               <AppText weight={700} style={{ flex: 1 }}>{`${fmtN(r.nivelCm)} cm`}</AppText>
-              <Icon name={l.icon} filled size={20 * fontScale} color={l.fg} />
-              <AppText size={14} weight={700} color={l.fg}>
-                {l.label}
-              </AppText>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, paddingVertical: 3, paddingLeft: 6, paddingRight: 10, borderRadius: 20, backgroundColor: l.bg }}>
+                <Icon name={l.icon} filled size={18 * fontScale} color={l.fg} />
+                <AppText size={14} weight={700} color={l.fg} lh={1.2}>
+                  {l.label}
+                </AppText>
+              </View>
             </View>
           );
         })}

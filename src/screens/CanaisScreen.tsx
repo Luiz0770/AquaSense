@@ -3,9 +3,9 @@ import { Linking, Pressable, View } from 'react-native';
 import { useTheme } from '@/contexts/SettingsContext';
 import { dataSources, officialChannels } from '@/data/history';
 import { LEVEL_ORDER } from '@/services/iot/thresholds';
-import { glowShadow, gradients, levelStyle, stage } from '@/styles/theme';
+import { cardShadow, glowShadow, gradients, levelStyle, stage } from '@/styles/theme';
 import { AppText } from '@/components/AppText';
-import { IconBadge, ScreenTitle, SectionTitle } from '@/components/Controls';
+import { IconBadge, LevelBadge, ScreenTitle, SectionTitle } from '@/components/Controls';
 import { Icon, type IconName } from '@/components/Icon';
 import { Screen } from '@/components/Screen';
 import { Gradient, StageCard } from '@/components/Surfaces';
@@ -121,14 +121,17 @@ export function CanaisScreen() {
               key={k}
               accessible
               accessibilityLabel={`${l.label}: ${l.range}`}
-              style={{ flexBasis: '48%', flexGrow: 1, paddingVertical: 10, paddingHorizontal: 12, borderRadius: 16, backgroundColor: l.bg, borderWidth: 2, borderColor: l.fg, flexDirection: 'row', alignItems: 'center', gap: 8 }}
+              style={[
+                { flexBasis: '48%', flexGrow: 1, paddingVertical: 10, paddingHorizontal: 12, borderRadius: 20, backgroundColor: palette.surface, borderWidth: 1, borderColor: palette.line, flexDirection: 'row', alignItems: 'center', gap: 10 },
+                cardShadow(palette, 0.06),
+              ]}
             >
-              <Icon name={l.icon} filled size={24 * fontScale} color={l.fg} />
+              <LevelBadge level={k} size={36} iconSize={22} radius={12} />
               <View style={{ flexShrink: 1 }}>
-                <AppText weight={700} color={l.fg}>
+                <AppText weight={700} color={palette.shadows ? l.fg : palette.ink}>
                   {l.label}
                 </AppText>
-                <AppText size={14} color={palette.ink}>
+                <AppText size={14} muted>
                   {l.range}
                 </AppText>
               </View>
