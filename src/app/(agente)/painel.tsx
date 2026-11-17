@@ -22,7 +22,7 @@ const fmtN = (n: number) => String(n).replace('.', ',');
 export default function PainelScreen() {
   const router = useRouter();
   const { palette, fontScale } = useTheme();
-  const { current, level, reports, alerts, scenario } = useMonitoring();
+  const { current, level, reports, alerts, scenario, sourceLabel } = useMonitoring();
   const pendentes = reports.filter((r) => r.status === 'pendente').length;
 
   const points = [
@@ -42,7 +42,7 @@ export default function PainelScreen() {
           ]}
         />
         <AppText size={14} color={stage.muted} align="center">
-          {`${points.length} pontos · ${pilotPoint.name} ao vivo (simulado)`}
+          {`${points.length} pontos · ${pilotPoint.name} ao vivo (${sourceLabel})`}
         </AppText>
       </StageCard>
 

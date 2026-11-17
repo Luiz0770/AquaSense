@@ -7,9 +7,12 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import type { AlertEvent, Level, Reading, Report, ReportStatus, Scenario } from '@/types';
+import type { AlertEvent, DataSource, Level, Reading, Report, ReportStatus, Scenario } from '@/types';
 import { initialReading, nextReading, READING_INTERVAL_MS } from '@/services/iot/simulator';
 import { levelFor } from '@/services/iot/thresholds';
+import { connectLiveSource, LIVE_SOURCE } from '@/services/iot/liveSource';
+import type { MqttStatus } from '@/services/iot/mqttLite';
+import { makeId } from '@/utils/format';
 import {
   loadReadings,
   loadRunning,
@@ -35,6 +38,12 @@ interface MonitoringValue {
   /** Aviso de mudança de estado ainda não dispensado (só para Atenção, Alerta e Crítico). */
   banner: AlertEvent | null;
   reports: Report[];
+  /** 'esp32' enquanto o Wokwi estiver mandando leituras; senão 'simulado'. */
+  source: DataSource;
+  /** Texto curto da fonte para os rótulos ("sensor ESP32" ou "simulado"). */
+  sourceLabel: string;
+  /** Conexão com o broker MQTT. */
+  liveStatus: MqttStatus;
   setScenario: (s: Scenario) => void;
   togglePause: () => void;
   /** Gera uma leitura agora, sem esperar os 5 s (botão "Nova leitura" da Simulação). */
@@ -56,6 +65,9 @@ export function MonitoringProvider({ children }: { children: React.ReactNode }) 
   const [alerts, setAlerts] = useState<AlertEvent[]>([]);
   const [reports, setReports] = useState<Report[]>([]);
   const [dismissedId, setDismissedId] = useState<string | null>(null);
+  const [liveStatus, setLiveStatus] = useState<MqttStatus>('desconectado');
+  const [liveActive, setLiveActive] = useState(false);
+  const lastLiveAt = useRef(0);
 
   // A simulação lê sempre o estado mais novo por esta ref, sem recriar o intervalo a cada leitura.
   const live = useRef({ readings, scenario, alerts });
@@ -86,11 +98,12 @@ export function MonitoringProvider({ children }: { children: React.ReactNode }) 
     };
   }, []);
 
-  const tick = useCallback(() => {
-    const { readings: list, scenario: sc, alerts: al } = live.current;
+  /** Entrada única de leituras (simulador ou ESP32): guarda, persiste e gera o alerta de mudança de faixa. */
+  const pushReading = useCallback((next: Reading) => {
+    const { readings: list, alerts: al } = live.current;
     const prev = list[0];
-    const next = nextReading(prev, sc);
     const nextList = [next, ...list].slice(0, MAX_READINGS);
+    live.current = { ...live.current, readings: nextList };
     setReadings(nextList);
     void saveReadings(nextList);
 
@@ -99,10 +112,18 @@ export function MonitoringProvider({ children }: { children: React.ReactNode }) 
     if (before !== after) {
       const event = buildAlert(before, after, next);
       const nextAlerts = [event, ...al].slice(0, MAX_ALERTS);
+      live.current = { ...live.current, alerts: nextAlerts };
       setAlerts(nextAlerts);
       void saveAlerts(nextAlerts);
     }
   }, []);
+
+  const tick = useCallback(() => {
+    // Com o ESP32 mandando leituras, o simulador fica em espera.
+    if (Date.now() - lastLiveAt.current < LIVE_SOURCE.timeoutMs) return;
+    const { readings: list, scenario: sc } = live.current;
+    pushReading(nextReading(list[0], sc));
+  }, [pushReading]);
 
   // A simulação só roda com alguém logado e enquanto não estiver pausada.
   useEffect(() => {
@@ -110,6 +131,37 @@ export function MonitoringProvider({ children }: { children: React.ReactNode }) 
     const id = setInterval(tick, READING_INTERVAL_MS);
     return () => clearInterval(id);
   }, [ready, user, running, tick]);
+
+  // Fonte ao vivo: assina o tópico MQTT do ESP32 (Wokwi) enquanto houver alguém logado.
+  const userId = user?.id;
+  useEffect(() => {
+    if (!ready || !userId) return;
+    const stop = connectLiveSource({
+      onStatus: setLiveStatus,
+      onReading: (r) => {
+        lastLiveAt.current = Date.now();
+        setLiveActive(true);
+        pushReading({ id: makeId('r'), ...r, timestamp: new Date().toISOString() });
+      },
+    });
+    return () => {
+      stop();
+      lastLiveAt.current = 0;
+      setLiveActive(false);
+    };
+  }, [ready, userId, pushReading]);
+
+  // Se o ESP32 parar de mandar (Wokwi fechado, sem internet), volta para o simulador.
+  useEffect(() => {
+    if (!liveActive) return;
+    const id = setInterval(() => {
+      if (Date.now() - lastLiveAt.current >= LIVE_SOURCE.timeoutMs) setLiveActive(false);
+    }, 1000);
+    return () => clearInterval(id);
+  }, [liveActive]);
+
+  const source: DataSource = liveActive ? 'esp32' : 'simulado';
+  const sourceLabel = liveActive ? 'sensor ESP32' : 'simulado';
 
   const current = readings[0];
   const level = levelFor(current.nivelCm);
@@ -180,6 +232,9 @@ export function MonitoringProvider({ children }: { children: React.ReactNode }) 
       alerts,
       banner,
       reports,
+      source,
+      sourceLabel,
+      liveStatus,
       setScenario,
       togglePause,
       stepNow: tick,
@@ -199,6 +254,9 @@ export function MonitoringProvider({ children }: { children: React.ReactNode }) 
       alerts,
       banner,
       reports,
+      source,
+      sourceLabel,
+      liveStatus,
       setScenario,
       togglePause,
       restart,

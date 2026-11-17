@@ -57,7 +57,7 @@ export default function InicioScreen() {
   const router = useRouter();
   const { user } = useAuth();
   const { palette, fontScale } = useTheme();
-  const { current, level, readings } = useMonitoring();
+  const { current, level, readings, source, sourceLabel } = useMonitoring();
   const { selected } = useAppLocation();
   const [fcTab, setFcTab] = useState<FcTab>('horas');
   const { data: forecast, loading: fcLoading, error: fcError } = useForecast();
@@ -115,7 +115,7 @@ export default function InicioScreen() {
 
           <View
             accessible
-            accessibilityLabel={`Nível da água na rua: ${fmtN(current.nivelCm)} centímetros. ${trend.label}, ${formatTime(current.timestamp)}, leitura simulada.`}
+            accessibilityLabel={`Nível da água na rua: ${fmtN(current.nivelCm)} centímetros. ${trend.label}, ${formatTime(current.timestamp)}, ${source === 'esp32' ? 'leitura do sensor ESP32' : 'leitura simulada'}.`}
             style={{ gap: 2, alignSelf: 'flex-start' }}
           >
             <AppText size={15} weight={700} color={stage.muted}>
@@ -129,7 +129,7 @@ export default function InicioScreen() {
             </AppText>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 }}>
               <Icon name={trend.icon} size={22 * fontScale} color={stage.cyan} />
-              <AppText size={14} color={stage.muted2}>{`${trend.label} · ${formatTime(current.timestamp)} · simulado`}</AppText>
+              <AppText size={14} color={stage.muted2}>{`${trend.label} · ${formatTime(current.timestamp)} · ${sourceLabel}`}</AppText>
             </View>
           </View>
         </View>

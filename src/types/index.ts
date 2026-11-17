@@ -82,3 +82,6 @@ export interface GpsFix {
   lat: number;
   lon: number;
 }
+
+/** De onde vem a leitura atual: o ESP32 do Wokwi (via MQTT) ou o simulador do app. */
+export type DataSource = 'esp32' | 'simulado';

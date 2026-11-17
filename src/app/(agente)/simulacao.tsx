@@ -11,13 +11,20 @@ import { JsonBlock, RiskChip, ScreenTitle, SelectCard } from '@/components/Contr
 import { Holo, LiveDot } from '@/components/Hologram';
 import { Icon } from '@/components/Icon';
 import { Screen } from '@/components/Screen';
-import { StageCard } from '@/components/Surfaces';
+import { Card, StageCard } from '@/components/Surfaces';
+import { LIVE_SOURCE } from '@/services/iot/liveSource';
 
 const fmtN = (n: number) => String(n).replace('.', ',');
 
 export default function SimulacaoScreen() {
-  const { fontScale } = useTheme();
-  const { current, level, scenario, running, setScenario, togglePause, stepNow, restart } = useMonitoring();
+  const { fontScale, palette } = useTheme();
+  const { current, level, scenario, running, setScenario, togglePause, stepNow, restart, source, liveStatus } = useMonitoring();
+  const esp = source === 'esp32';
+  const sourceHint = esp
+    ? 'Recebendo leituras do ESP32 por MQTT. O simulador fica em espera e volta sozinho se o sensor parar de enviar por 15 s.'
+    : liveStatus === 'conectado'
+      ? `Conectado ao broker, aguardando o ESP32 no tópico ${LIVE_SOURCE.topic}. Enquanto isso, o app simula.`
+      : 'Sem conexão com o broker MQTT. Usando o simulador do app.';
   const { id: _id, ...json } = current;
 
   return (
@@ -43,6 +50,16 @@ export default function SimulacaoScreen() {
         </View>
       </StageCard>
 
+      <Card style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+        <Icon name={esp ? 'sensors' : liveStatus === 'conectado' ? 'wifi' : 'tune'} size={28 * fontScale} color={palette.accent} />
+        <View style={{ flex: 1, gap: 2 }}>
+          <AppText weight={700}>{esp ? 'Fonte: ESP32 no Wokwi' : 'Fonte: simulador do app'}</AppText>
+          <AppText size={14} muted>
+            {sourceHint}
+          </AppText>
+        </View>
+      </Card>
+
       <View style={{ flexDirection: 'row', gap: 10 }}>
         <Button
           label={running ? 'Pausar' : 'Retomar'}
@@ -51,7 +68,7 @@ export default function SimulacaoScreen() {
           style={{ flex: 1 }}
           onPress={togglePause}
         />
-        <Button label="Nova leitura" icon="skip_next" variant="outline" height={56} style={{ flex: 1 }} onPress={stepNow} />
+        <Button label="Nova leitura" icon="skip_next" variant="outline" height={56} style={{ flex: 1 }} onPress={stepNow} disabled={esp} />
       </View>
 
       <View accessibilityRole="radiogroup" accessibilityLabel="Cenário" style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>

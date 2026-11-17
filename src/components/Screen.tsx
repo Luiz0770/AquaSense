@@ -39,7 +39,7 @@ export function useSourcesHref() {
 export function Screen({ children, notice = false, back = false, backLabel = 'Voltar', hero = false, contentStyle }: Props) {
   const { palette, settings, dismissNotice } = useTheme();
   const { user } = useAuth();
-  const { banner, dismissBanner } = useMonitoring();
+  const { banner, dismissBanner, sourceLabel } = useMonitoring();
   const router = useRouter();
   const sources = useSourcesHref();
   const hd = hero
@@ -102,7 +102,7 @@ export function Screen({ children, notice = false, back = false, backLabel = 'Vo
           <View style={[styles.notice, { backgroundColor: palette.accentBg, borderColor: palette.accent }]}>
             <Icon name="info" size={20} color={palette.accent} />
             <AppText size={14} lh={1.25} style={{ flex: 1 }}>
-              Estimativa não oficial · simulado. Não substitui Defesa Civil (199) e CGE.
+              {`Estimativa não oficial · ${sourceLabel}. Não substitui Defesa Civil (199) e CGE.`}
             </AppText>
             <Pressable
               onPress={() => router.push(sources)}

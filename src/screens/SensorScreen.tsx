@@ -20,7 +20,7 @@ const POINTS = 24;
 /** Sensor ao vivo: holograma grande, gráficos das últimas leituras e o JSON bruto do ESP32. */
 export function SensorScreen() {
   const { palette, fontScale } = useTheme();
-  const { current, level, readings, running } = useMonitoring();
+  const { current, level, readings, running, source } = useMonitoring();
   const [raw, setRaw] = useState(false);
   // As leituras vêm da mais nova para a mais antiga; o gráfico vai da mais antiga para agora.
   const recent = readings.slice(0, POINTS).reverse();
@@ -36,9 +36,9 @@ export function SensorScreen() {
             {`Sensor ${current.sensorId}`}
           </AppText>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-            <LiveDot on={running} />
+            <LiveDot on={running || source === 'esp32'} />
             <AppText size={14} muted>
-              {running ? 'Ao vivo · simulado' : 'Pausado'}
+              {source === 'esp32' ? 'Ao vivo · ESP32 (Wokwi)' : running ? 'Ao vivo · simulado' : 'Pausado'}
             </AppText>
           </View>
         </View>

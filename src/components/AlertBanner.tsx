@@ -1,5 +1,6 @@
 import React from 'react';
 import { Pressable, View } from 'react-native';
+import { useMonitoring } from '@/contexts/MonitoringContext';
 import { useTheme } from '@/contexts/SettingsContext';
 import { levelStyle } from '@/styles/theme';
 import type { Level } from '@/types';
@@ -27,6 +28,7 @@ export function AlertBanner({
   onSources: () => void;
 }) {
   const { palette } = useTheme();
+  const { sourceLabel } = useMonitoring();
   const l = levelStyle[level];
   return (
     <FadeIn
@@ -52,7 +54,7 @@ export function AlertBanner({
             {`${l.label} · ${fmtN(nivelCm)} cm`}
           </AppText>
           <AppText size={14} lh={1.3} muted>
-            Estimativa não oficial · simulado
+            {`Estimativa não oficial · ${sourceLabel}`}
           </AppText>
         </View>
         <Pressable

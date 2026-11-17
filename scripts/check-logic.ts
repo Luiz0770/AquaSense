@@ -17,6 +17,7 @@ import {
 import { levelFor, LIMITS } from '../src/services/iot/thresholds';
 import { initialReading, nextReading, PROFILES } from '../src/services/iot/simulator';
 import { buildAlert } from '../src/services/iot/alerts';
+import { parseLivePayload } from '../src/services/iot/liveSource';
 import type { Scenario } from '../src/types';
 
 let n = 0;
@@ -116,6 +117,20 @@ ok('alertas: texto de subida e de descida', () => {
   const r = { ...initialReading(), nivelCm: 27 };
   assert.equal(buildAlert('normal', 'atencao', r).mensagem, 'Mudou para Atenção, com 27 cm.');
   assert.equal(buildAlert('atencao', 'normal', { ...r, nivelCm: 18 }).mensagem, 'Voltou para Normal, com 18 cm.');
+});
+
+ok('MQTT: aceita o JSON do ESP32 e descarta mensagens inválidas', () => {
+  assert.deepEqual(parseLivePayload('{"sensorId":"ESP32-01","nivelCm":32.46,"chuvaMm":12.4,"seq":3}'), {
+    sensorId: 'ESP32-01',
+    nivelCm: 32.5,
+    chuvaMm: 12.4,
+  });
+  assert.equal(parseLivePayload('oi'), null);
+  assert.equal(parseLivePayload('[1,2]'), null);
+  assert.equal(parseLivePayload('{"nivelCm":"10","chuvaMm":1}'), null);
+  assert.equal(parseLivePayload('{"nivelCm":-5,"chuvaMm":1}'), null);
+  assert.equal(parseLivePayload('{"nivelCm":10,"chuvaMm":9999}'), null);
+  assert.equal(parseLivePayload('{"sensorId":"<script>","nivelCm":10,"chuvaMm":1}')?.sensorId, 'ESP32-01');
 });
 
 console.log(`\n${n} verificações passaram.`);
