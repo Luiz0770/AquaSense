@@ -1,10 +1,8 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { View } from 'react-native';
-import { useRouter } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
 import { useMonitoring } from '@/contexts/MonitoringContext';
 import { useTheme } from '@/contexts/SettingsContext';
-import { DEMO_CITIZEN } from '@/services/authService';
 import type { FontSize } from '@/types';
 import { fontScaleBySize, gradients, levelStyle, stage } from '@/styles/theme';
 import { AppText } from '@/components/AppText';
@@ -23,28 +21,10 @@ const SIZES: { id: FontSize; label: string; preview: number }[] = [
 const fmtN = (n: number) => String(n).replace('.', ',');
 
 export default function PerfilScreen() {
-  const router = useRouter();
-  const { user, signOut, signIn, signInDemoAgent } = useAuth();
+  const { user, signOut } = useAuth();
   const { current, level } = useMonitoring();
   const { settings, setFontSize, setHighContrast, setReduceMotion } = useTheme();
-  const [busy, setBusy] = useState(false);
   const isAgent = user?.role === 'agente';
-
-  /** Troca para a conta de demonstração do outro perfil. */
-  const switchRole = async () => {
-    setBusy(true);
-    try {
-      if (isAgent) {
-        await signIn(DEMO_CITIZEN.email, DEMO_CITIZEN.password);
-        router.replace('/');
-      } else {
-        await signInDemoAgent();
-        router.replace('/painel');
-      }
-    } finally {
-      setBusy(false);
-    }
-  };
 
   return (
     <Screen back>
@@ -99,13 +79,6 @@ export default function PerfilScreen() {
         Preferências salvas neste aparelho.
       </AppText>
 
-      <Button
-        label={isAgent ? 'Ver como cidadão (demo)' : 'Ver como agente (demo)'}
-        icon="swap_horiz"
-        variant="outline"
-        disabled={busy}
-        onPress={() => void switchRole()}
-      />
       <Button label="Sair" icon="logout" variant="danger" onPress={() => void signOut()} />
     </Screen>
   );

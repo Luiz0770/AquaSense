@@ -51,8 +51,11 @@ interface Glow {
 export function StageBackground({ glow, vertical = false, colors }: { glow?: Glow; vertical?: boolean; colors?: readonly string[] }) {
   const stops = colors ?? [stage.deep, stage.mid, stage.low];
   const pos = stops.length === 3 ? [0, 0.6, 1] : stops.map((_, i) => i / (stops.length - 1));
+  // O Svg fica dentro de uma View absoluta sem padding: "100%" num filho absoluto é medido sem o padding
+  // do pai no Android (Yoga), e o fundo terminava antes da base do cabeçalho, deixando as ondas soltas.
   return (
-    <Svg style={StyleSheet.absoluteFill} width="100%" height="100%" preserveAspectRatio="none" viewBox="0 0 100 100">
+    <View pointerEvents="none" style={StyleSheet.absoluteFill}>
+    <Svg width="100%" height="100%" preserveAspectRatio="none" viewBox="0 0 100 100">
       <Defs>
         <SvgLinear id="st" x1={vertical ? 0.5 : 0.37} y1="0" x2={vertical ? 0.5 : 0.63} y2="1">
           {stops.map((c, i) => (
@@ -69,6 +72,7 @@ export function StageBackground({ glow, vertical = false, colors }: { glow?: Glo
       <Rect x="0" y="0" width="100" height="100" fill="url(#st)" />
       {glow ? <Rect x="0" y="0" width="100" height="100" fill="url(#gl)" /> : null}
     </Svg>
+    </View>
   );
 }
 
@@ -115,6 +119,7 @@ export function WaveStrip({
   durationMs,
   reverse,
   opacity = 1,
+  phase = 0,
   style,
 }: {
   fill: string;
@@ -122,11 +127,14 @@ export function WaveStrip({
   durationMs: number;
   reverse?: boolean;
   opacity?: number;
+  /** Deslocamento inicial (fração da largura) para as camadas não nascerem com as cristas alinhadas. */
+  phase?: number;
   style?: StyleProp<ViewStyle>;
 }) {
   const [w, setW] = useState(0);
   const t = useLoop(durationMs);
-  const tx = t.interpolate({ inputRange: [0, 1], outputRange: reverse ? [-w, 0] : [0, -w] });
+  const shift = (((phase % 1) + 1) % 1) * w;
+  const tx = t.interpolate({ inputRange: [0, 1], outputRange: reverse ? [-w - shift, -shift] : [-shift, -w - shift] });
   return (
     <View
       pointerEvents="none"
@@ -134,7 +142,9 @@ export function WaveStrip({
       style={[{ position: 'absolute', left: 0, right: 0, height, overflow: 'hidden', opacity }, style]}
     >
       {w > 0 ? (
-        <Animated.View style={{ flexDirection: 'row', width: w * 2, height, transform: [{ translateX: tx }] }}>
+        // Três cópias: com a fase, o deslocamento chega a quase -2w, e com só duas sobrava um trecho vazio (a onda sumia).
+        <Animated.View style={{ flexDirection: 'row', width: w * 3, height, transform: [{ translateX: tx }] }}>
+          <WaveShape width={w} height={height} fill={fill} />
           <WaveShape width={w} height={height} fill={fill} />
           <WaveShape width={w} height={height} fill={fill} />
         </Animated.View>
@@ -148,9 +158,9 @@ export function HeroWaves() {
   const { palette } = useTheme();
   return (
     <View pointerEvents="none" style={{ position: 'absolute', left: 0, right: 0, bottom: -1, height: 64, overflow: 'hidden' }}>
-      <WaveStrip fill={stage.cyan} height={38} durationMs={9000} reverse opacity={0.35} style={{ bottom: 16 }} />
-      <WaveStrip fill={stage.sky} height={40} durationMs={6000} opacity={0.5} style={{ bottom: 6 }} />
-      <WaveStrip fill={palette.bg} height={34} durationMs={4000} style={{ bottom: 0 }} />
+      <WaveStrip fill={stage.cyan} height={38} durationMs={9000} reverse opacity={0.35} phase={0.2} style={{ bottom: 16 }} />
+      <WaveStrip fill={stage.sky} height={40} durationMs={6000} opacity={0.5} phase={0.55} style={{ bottom: 6 }} />
+      <WaveStrip fill={palette.bg} height={34} durationMs={4000} phase={0.8} style={{ bottom: 0 }} />
     </View>
   );
 }

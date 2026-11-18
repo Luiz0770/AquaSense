@@ -21,3 +21,12 @@ export function formatDayMonth(d: Date): string {
 export function makeId(prefix: string): string {
   return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 }
+
+/** Normaliza para comparar texto ignorando acentos e maiúsculas (busca de bairro/rua). */
+export function normalizeText(s: string): string {
+  return s
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .toLowerCase()
+    .trim();
+}

@@ -9,6 +9,7 @@ import { JetBrainsMono_400Regular, JetBrainsMono_600SemiBold } from '@expo-googl
 import { SettingsProvider, useTheme } from '@/contexts/SettingsContext';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import { MonitoringProvider, useMonitoring } from '@/contexts/MonitoringContext';
+import { LocationProvider } from '@/contexts/LocationContext';
 
 void SplashScreen.preventAutoHideAsync();
 
@@ -55,6 +56,7 @@ function Shell() {
           <Stack.Screen name="(tabs)" />
           <Stack.Screen name="(agente)" />
           <Stack.Screen name="perfil" />
+          <Stack.Screen name="location" />
         </Stack>
       </AuthGate>
     </>
@@ -80,7 +82,9 @@ export default function RootLayout() {
       <SettingsProvider>
         <AuthProvider>
           <MonitoringProvider>
-            <Shell />
+            <LocationProvider>
+              <Shell />
+            </LocationProvider>
           </MonitoringProvider>
         </AuthProvider>
       </SettingsProvider>

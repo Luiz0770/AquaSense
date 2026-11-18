@@ -1,9 +1,8 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { AccessibilityInfo } from 'react-native';
 import type { FontSize, Settings } from '@/types';
-import { defaultSettings, loadSettings, saveSettings } from '@/services/settingsService';
+import { defaultSettings, hasSavedSettings, loadSettings, saveSettings } from '@/services/settingsService';
 import { fontScaleBySize, highContrast, light, type Palette } from '@/styles/theme';
-import { getItem, StorageKeys } from '@/services/storage';
 
 interface SettingsValue {
   settings: Settings;
@@ -26,10 +25,10 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     let alive = true;
     (async () => {
-      const saved = await getItem<Partial<Settings> | null>(StorageKeys.settings, null);
+      const saved = await hasSavedSettings();
       const base = await loadSettings();
       // Sem configuração salva, respeita a preferência do sistema por menos movimento.
-      if (saved === null) {
+      if (!saved) {
         try {
           base.reduceMotion = await AccessibilityInfo.isReduceMotionEnabled();
         } catch {

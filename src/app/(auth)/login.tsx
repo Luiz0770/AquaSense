@@ -16,7 +16,7 @@ import { TextField } from '@/components/TextField';
 
 export default function LoginScreen() {
   const { palette, fontScale } = useTheme();
-  const { signIn, signInDemoAgent } = useAuth();
+  const { signIn, signInDemoAgent, signInDemoCitizen } = useAuth();
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -98,12 +98,21 @@ export default function LoginScreen() {
           {errors.form ? <ErrorText>{errors.form}</ErrorText> : null}
 
           <Button label={busy ? 'Entrando...' : 'Entrar'} onPress={submit} disabled={busy} />
+          <Button label="Criar conta" variant="outline" onPress={() => router.push('/cadastro')} />
           <View style={{ flexDirection: 'row', gap: 10 }}>
-            <Button label="Criar conta" variant="outline" style={{ flex: 1 }} onPress={() => router.push('/cadastro')} />
+            <Button
+              label="Ver como cliente (demonstração)"
+              icon="person"
+              variant="soft"
+              compact
+              style={{ flex: 1 }}
+              onPress={() => void signInDemoCitizen()}
+            />
             <Button
               label="Ver como agente (demonstração)"
               icon="badge"
               variant="soft"
+              compact
               style={{ flex: 1 }}
               onPress={() => void signInDemoAgent()}
             />

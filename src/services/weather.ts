@@ -96,3 +96,30 @@ export async function fetchForecast(lat: number = WEATHER_LAT, lon: number = WEA
 
   return { hours, days };
 }
+
+export interface GeocodeResult {
+  lat: number;
+  lon: number;
+}
+
+function geocodeUrl(query: string): string {
+  return `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(query)}&count=1&language=pt&format=json`;
+}
+
+/** Geocodifica um endereço digitado (bairro ou rua) pela Open-Meteo. Null quando não encontra. */
+export async function geocodeAddress(query: string): Promise<GeocodeResult | null> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+  try {
+    const res = await fetch(geocodeUrl(query), { signal: controller.signal });
+    if (!res.ok) return null;
+    const data = (await res.json()) as { results?: { latitude: number; longitude: number }[] };
+    const first = data.results?.[0];
+    if (!first) return null;
+    return { lat: first.latitude, lon: first.longitude };
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(timeout);
+  }
+}

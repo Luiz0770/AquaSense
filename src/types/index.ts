@@ -67,3 +67,18 @@ export interface Settings {
   reduceMotion: boolean;
   noticeDismissed: boolean;
 }
+
+/** Local escolhido para alimentar a previsão (ponto monitorado, bairro, endereço digitado ou GPS). */
+export interface SelectedLocation {
+  id: string;
+  name: string;
+  subtitle: string;
+  lat: number;
+  lon: number;
+}
+
+/** Posição obtida por GPS, já arredondada a 2 casas decimais. */
+export interface GpsFix {
+  lat: number;
+  lon: number;
+}

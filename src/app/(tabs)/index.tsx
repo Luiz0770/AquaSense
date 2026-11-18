@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Defs, RadialGradient, Rect, Stop } from 'react-native-svg';
 import { useRouter } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
 import { useMonitoring } from '@/contexts/MonitoringContext';
+import { useAppLocation } from '@/contexts/LocationContext';
 import { useTheme } from '@/contexts/SettingsContext';
-import { pilotPoint } from '@/data/pilotPoint';
 import { forecastIcon } from '@/data/forecast';
 import { useForecast } from '@/hooks/useForecast';
 import { LEVEL_ORDER } from '@/services/iot/thresholds';
@@ -58,8 +58,9 @@ export default function InicioScreen() {
   const { user } = useAuth();
   const { palette, fontScale } = useTheme();
   const { current, level, readings } = useMonitoring();
+  const { selected } = useAppLocation();
   const [fcTab, setFcTab] = useState<FcTab>('horas');
-  const { data: forecast, loading: fcLoading, error: fcError, userPlaceName } = useForecast();
+  const { data: forecast, loading: fcLoading, error: fcError } = useForecast();
   const risk = levelStyle[level];
   const trend = trendOf(readings);
   const firstName = (user?.name ?? '').split(' ')[0] || 'Olá';
@@ -95,12 +96,19 @@ export default function InicioScreen() {
               <AppText font="display" weight={600} size={17} lh={1.3} color="#FFFFFF" accessibilityRole="header">
                 {`Olá, ${firstName}`}
               </AppText>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+              <Pressable
+                onPress={() => router.push('/location')}
+                accessibilityRole="button"
+                accessibilityLabel={`Alterar localização. Atual: ${selected.name}`}
+                hitSlop={{ top: 14, bottom: 14, left: 4, right: 10 }}
+                style={{ flexDirection: 'row', alignItems: 'center', gap: 4, alignSelf: 'flex-start' }}
+              >
                 <Icon name="location_on" size={20 * fontScale} color={stage.cyan} />
                 <AppText size={14} weight={700} color={stage.muted}>
-                  {userPlaceName ?? pilotPoint.name}
+                  {selected.name}
                 </AppText>
-              </View>
+                <Icon name="keyboard_arrow_down" size={20 * fontScale} color={stage.muted} />
+              </Pressable>
             </View>
             <RiskChip level={level} />
           </View>
@@ -265,6 +273,7 @@ export default function InicioScreen() {
             Sem conexão · exibindo dados simulados
           </AppText>
         ) : null}
+        <AppText size={14} muted>{`Previsão de chuva · ${selected.name}`}</AppText>
         <AppText size={14} muted>
           Fonte: Open-Meteo (CC BY 4.0)
         </AppText>

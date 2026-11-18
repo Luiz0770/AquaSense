@@ -17,8 +17,10 @@ interface Props {
   children: React.ReactNode;
   /** Faixa "Estimativa não oficial" acima da barra de abas (Início, Histórico, Sensor, Painel, Simulação). */
   notice?: boolean;
-  /** Tela fora das abas (Perfil): seta de voltar no lugar do botão de perfil. */
+  /** Tela fora das abas (Perfil, Localização): seta de voltar no lugar do botão de perfil. */
   back?: boolean;
+  /** Texto do botão de voltar, quando precisa ser mais específico que "Voltar". */
+  backLabel?: string;
   /** Tela inicial: cabeçalho e status bar azul-marinho, marca e perfil em branco. */
   hero?: boolean;
   contentStyle?: StyleProp<ViewStyle>;
@@ -34,7 +36,7 @@ export function useSourcesHref() {
  * Estrutura das telas logadas, como no design: marca + perfil no topo,
  * aviso de mudança de estado, conteúdo rolável e a faixa de aviso fixa.
  */
-export function Screen({ children, notice = false, back = false, hero = false, contentStyle }: Props) {
+export function Screen({ children, notice = false, back = false, backLabel = 'Voltar', hero = false, contentStyle }: Props) {
   const { palette, settings, dismissNotice } = useTheme();
   const { user } = useAuth();
   const { banner, dismissBanner } = useMonitoring();
@@ -56,7 +58,7 @@ export function Screen({ children, notice = false, back = false, hero = false, c
               <Pressable
                 onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))}
                 accessibilityRole="button"
-                accessibilityLabel="Voltar"
+                accessibilityLabel={backLabel}
                 style={{ width: 44, height: 48, marginLeft: -8, alignItems: 'center', justifyContent: 'center' }}
               >
                 <Icon name="arrow_back" size={26} color={hd.t} />

@@ -1,25 +1,22 @@
 import { useCallback, useState } from 'react';
 import { useFocusEffect } from 'expo-router';
 import { buildForecast } from '@/data/forecast';
-import { fetchForecast, WEATHER_LAT, WEATHER_LON, type Forecast } from '@/services/weather';
-import { useUserLocation } from './useUserLocation';
+import { useAppLocation } from '@/contexts/LocationContext';
+import { fetchForecast, type Forecast } from '@/services/weather';
 
 const CACHE_MS = 10 * 60 * 1000;
 
-/** Cache de 10 min por local (chave = coordenadas arredondadas), para não refazer a chamada a cada pequena movimentação. */
+/** Cache de 10 min por local (chave = coordenadas), para não refazer a chamada a cada pequena navegação. */
 const cache = new Map<string, { data: Forecast; at: number }>();
 
 /**
- * Previsão real (Open-Meteo) na localização aproximada do usuário, com fallback
- * automático e seguro para o ponto PT-07 sem permissão, negada ou com erro.
+ * Previsão real (Open-Meteo) no local escolhido pela pessoa (tela "Sua localização"),
+ * com fallback automático e seguro para o padrão (PT-07) enquanto o local salvo carrega.
  */
 export function useForecast() {
-  const userLocation = useUserLocation();
-  const usingUser = userLocation.status === 'granted' && userLocation.lat !== null && userLocation.lon !== null;
-  const lat = usingUser ? (userLocation.lat as number) : WEATHER_LAT;
-  const lon = usingUser ? (userLocation.lon as number) : WEATHER_LON;
+  const { ready, selected } = useAppLocation();
+  const { lat, lon } = selected;
   const cacheKey = `${lat},${lon}`;
-  const waitingForLocation = userLocation.status === 'loading';
 
   const [data, setData] = useState<Forecast>(() => cache.get(cacheKey)?.data ?? buildForecast());
   const [loading, setLoading] = useState(true);
@@ -27,7 +24,7 @@ export function useForecast() {
 
   useFocusEffect(
     useCallback(() => {
-      if (waitingForLocation) {
+      if (!ready) {
         setLoading(true);
         return;
       }
@@ -61,14 +58,12 @@ export function useForecast() {
       return () => {
         active = false;
       };
-    }, [waitingForLocation, cacheKey, lat, lon]),
+    }, [ready, cacheKey, lat, lon]),
   );
 
   return {
     data,
-    loading: loading || waitingForLocation,
+    loading: loading || !ready,
     error,
-    /** Bairro ou cidade do usuário, para mostrar no lugar do nome do ponto piloto. Null sem permissão/erro. */
-    userPlaceName: usingUser ? userLocation.placeName : null,
   };
 }

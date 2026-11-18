@@ -8,6 +8,7 @@ interface AuthValue {
   signIn: (email: string, password: string) => Promise<User>;
   signUp: (input: auth.SignUpInput) => Promise<User>;
   signInDemoAgent: () => Promise<User>;
+  signInDemoCitizen: () => Promise<User>;
   signOut: () => Promise<void>;
 }
 
@@ -45,14 +46,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     [signIn],
   );
 
+  const signInDemoCitizen = useCallback(
+    () => signIn(auth.DEMO_CITIZEN.email, auth.DEMO_CITIZEN.password),
+    [signIn],
+  );
+
   const signOut = useCallback(async () => {
     await auth.signOut();
     setUser(null);
   }, []);
 
   const value = useMemo(
-    () => ({ user, loading, signIn, signUp, signInDemoAgent, signOut }),
-    [user, loading, signIn, signUp, signInDemoAgent, signOut],
+    () => ({ user, loading, signIn, signUp, signInDemoAgent, signInDemoCitizen, signOut }),
+    [user, loading, signIn, signUp, signInDemoAgent, signInDemoCitizen, signOut],
   );
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

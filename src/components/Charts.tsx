@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { View } from 'react-native';
+import Animated, { Easing, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Defs, Line, LinearGradient as SvgLinear, Path, Stop } from 'react-native-svg';
 import { useTheme } from '@/contexts/SettingsContext';
@@ -45,6 +46,28 @@ export function AreaChart({
   );
 }
 
+const BAR_H = 110;
+const BAR_EASE = Easing.bezier(0.25, 0.1, 0.25, 1); // "ease" do CSS, como no design
+
+/**
+ * Uma barra que cresce/encolhe até a nova altura (transition: height .6s ease do design).
+ * Ao trocar o período (7 dias ↔ 24 h), as barras existentes mudam de altura e as novas sobem do zero.
+ */
+function AnimatedBar({ pct, colors }: { pct: number; colors: readonly [string, string] }) {
+  const { reduceMotion } = useTheme();
+  const target = Math.max(4, (pct / 100) * BAR_H);
+  const h = useSharedValue(reduceMotion ? target : 0);
+  useEffect(() => {
+    h.value = reduceMotion ? target : withTiming(target, { duration: 600, easing: BAR_EASE });
+  }, [target, reduceMotion, h]);
+  const style = useAnimatedStyle(() => ({ height: h.value }));
+  return (
+    <Animated.View style={[{ flex: 1 }, style]}>
+      <LinearGradient colors={colors} style={{ flex: 1, borderRadius: 8 }} />
+    </Animated.View>
+  );
+}
+
 /** Barras verticais com gradiente e rótulos (Histórico). */
 export function BarChart({
   values,
@@ -69,7 +92,7 @@ export function BarChart({
       accessibilityLabel={values.map((v, i) => `${labels[i]}: ${v} ${unit}`).join('; ')}
       style={{ gap: 10 }}
     >
-      <View style={{ height: 110, flexDirection: 'row', alignItems: 'flex-end', gap: 8 }}>
+      <View style={{ height: BAR_H, flexDirection: 'row', alignItems: 'flex-end', gap: 8 }}>
         {(thresholds ?? []).map(([p, c]) => (
           <View key={p} pointerEvents="none" style={{ position: 'absolute', left: 0, right: 0, bottom: `${p}%`, height: 2 }}>
             <Svg width="100%" height={2}>
@@ -78,9 +101,7 @@ export function BarChart({
           </View>
         ))}
         {values.map((v, i) => (
-          <View key={i} style={{ flex: 1, height: `${Math.max(3, Math.min(100, (v / max) * 100))}%`, minHeight: 4 }}>
-            <LinearGradient colors={colors} style={{ flex: 1, borderRadius: 8 }} />
-          </View>
+          <AnimatedBar key={i} pct={Math.max(3, Math.min(100, (v / max) * 100))} colors={colors} />
         ))}
       </View>
       <View style={{ flexDirection: 'row', gap: 8 }}>

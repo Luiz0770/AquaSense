@@ -16,3 +16,8 @@ export async function loadSettings(): Promise<Settings> {
 export function saveSettings(s: Settings): Promise<void> {
   return setItem(StorageKeys.settings, s);
 }
+
+/** Se o usuário já salvou alguma preferência (senão vale a preferência do sistema). */
+export async function hasSavedSettings(): Promise<boolean> {
+  return (await getItem<Partial<Settings> | null>(StorageKeys.settings, null)) !== null;
+}

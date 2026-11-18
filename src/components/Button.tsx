@@ -17,11 +17,13 @@ interface Props extends Omit<PressableProps, 'style' | 'children'> {
   /** Rótulo em Sora (botões principais) ou Atkinson negrito (secundários). */
   display?: boolean;
   textColor?: string;
+  /** Versão compacta para botões estreitos (lado a lado): menos padding, ícone e texto menores. */
+  compact?: boolean;
   style?: StyleProp<ViewStyle>;
 }
 
 /** Botões do design: principal com gradiente, contorno marinho, suave, transparente e perigo (Sair). */
-export function Button({ label, icon, variant = 'primary', height, display, textColor, disabled, style, ...rest }: Props) {
+export function Button({ label, icon, variant = 'primary', height, display, textColor, compact, disabled, style, ...rest }: Props) {
   const { palette, fontScale } = useTheme();
   const h = height ?? (variant === 'primary' ? 56 : 52);
   const fg =
@@ -39,13 +41,13 @@ export function Button({ label, icon, variant = 'primary', height, display, text
   const radius = variant === 'primary' ? 18 : 16;
 
   const content = (
-    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingHorizontal: 16, minHeight: h }}>
-      {icon ? <Icon name={icon} size={22 * fontScale} color={fg} /> : null}
+    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: compact ? 6 : 8, paddingHorizontal: compact ? 10 : 16, minHeight: h }}>
+      {icon ? <Icon name={icon} size={(compact ? 20 : 22) * fontScale} color={fg} /> : null}
       <AppText
         font={useDisplay ? 'display' : 'sans'}
         weight={useDisplay ? 600 : 700}
-        size={useDisplay ? 17 : 16}
-        lh={1.2}
+        size={useDisplay ? 17 : compact ? 15 : 16}
+        lh={compact ? 1.15 : 1.2}
         color={fg}
         align="center"
         style={{ flexShrink: 1 }}
