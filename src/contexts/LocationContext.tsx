@@ -1,7 +1,17 @@
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { DEFAULT_LOCATION } from '@/data/locations';
-import { loadLastGpsFix, loadSelectedLocation, saveLastGpsFix, saveSelectedLocation } from '@/services/locationService';
+import { getCurrentLocationFix } from '@/services/geolocation';
+import {
+  loadLastGpsFix,
+  loadLocationAsked,
+  loadSelectedLocation,
+  saveLastGpsFix,
+  saveLocationAsked,
+  saveSelectedLocation,
+} from '@/services/locationService';
 import type { GpsFix, SelectedLocation } from '@/types';
+import { isPermissionDenied, shouldRequestLocationOnLogin } from '@/utils/locationOnboarding';
+import { useAuth } from './AuthContext';
 
 export type { GpsFix, SelectedLocation };
 
@@ -18,6 +28,7 @@ interface LocationValue {
 const LocationContext = createContext<LocationValue | null>(null);
 
 export function LocationProvider({ children }: { children: React.ReactNode }) {
+  const { user } = useAuth();
   const [ready, setReady] = useState(false);
   const [selected, setSelected] = useState<SelectedLocation>(DEFAULT_LOCATION);
   const [lastFix, setLastFix] = useState<GpsFix | null>(null);
@@ -57,6 +68,30 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
     void saveSelectedLocation(loc);
     void saveLastGpsFix(fix);
   }, []);
+
+  // Primeiro login depois da instalação: pede a localização atual e a usa como local padrão.
+  // Negou a permissão: segue no ponto PT-07 e não pergunta de novo (o botão da tela "Sua localização" continua valendo).
+  // Falha por outro motivo (ex.: GPS desligado): tenta de novo no próximo login.
+  const userId = user?.id;
+  const askedThisSession = useRef(false);
+  useEffect(() => {
+    if (!ready || !userId || askedThisSession.current) return;
+    askedThisSession.current = true;
+    (async () => {
+      const [asked, saved] = await Promise.all([loadLocationAsked(), loadSelectedLocation()]);
+      if (!shouldRequestLocationOnLogin(asked, saved !== null)) {
+        if (!asked) void saveLocationAsked();
+        return;
+      }
+      try {
+        const fix = await getCurrentLocationFix();
+        void saveLocationAsked();
+        selectFromGps(fix);
+      } catch (e) {
+        if (isPermissionDenied(e)) void saveLocationAsked();
+      }
+    })();
+  }, [ready, userId, selectFromGps]);
 
   const value = useMemo<LocationValue>(
     () => ({ ready, selected, lastFix, selectLocation, selectFromGps }),

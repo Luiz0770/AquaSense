@@ -18,7 +18,7 @@ function round2(n: number): number {
  */
 export async function getCurrentLocationFix(): Promise<LocationFix> {
   const { granted } = await Location.requestForegroundPermissionsAsync();
-  if (!granted) throw new Error('Permissão de localização negada.');
+  if (!granted) throw Object.assign(new Error('Permissão de localização negada.'), { code: 'permission-denied' });
 
   const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
   return { lat: round2(pos.coords.latitude), lon: round2(pos.coords.longitude) };

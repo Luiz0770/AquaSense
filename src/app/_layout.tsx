@@ -57,6 +57,7 @@ function Shell() {
           <Stack.Screen name="(agente)" />
           <Stack.Screen name="perfil" />
           <Stack.Screen name="location" />
+          <Stack.Screen name="relato/[id]" />
         </Stack>
       </AuthGate>
     </>

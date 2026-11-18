@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
-import { View } from 'react-native';
+import { Pressable, View } from 'react-native';
+import { useRouter } from 'expo-router';
 import { useMonitoring } from '@/contexts/MonitoringContext';
 import { useTheme } from '@/contexts/SettingsContext';
 import { kindIcon } from '@/data/reportKinds';
 import { formatDateTime, formatTime } from '@/utils/format';
-import { cardShadow, gradients } from '@/styles/theme';
+import { hasReportPhoto } from '@/utils/reports';
+import { cardShadow, gradients, reportStatusStyle } from '@/styles/theme';
 import { AppText } from '@/components/AppText';
 import { Button } from '@/components/Button';
 import { IconBadge, ScreenTitle, Segmented, StatusChip } from '@/components/Controls';
@@ -14,7 +16,8 @@ import { Screen } from '@/components/Screen';
 type Filter = 'pend' | 'all';
 
 export default function RelatosScreen() {
-  const { palette } = useTheme();
+  const { palette, fontScale } = useTheme();
+  const router = useRouter();
   const { reports, reviewReport } = useMonitoring();
   const [filter, setFilter] = useState<Filter>('pend');
   const pend = reports.filter((r) => r.status === 'pendente');
@@ -49,30 +52,43 @@ export default function RelatosScreen() {
       {list.map((r) => {
         const when = new Date(r.observadoEm);
         const sameDay = new Date().toDateString() === when.toDateString();
+        const hora = sameDay ? formatTime(when) : formatDateTime(when);
+        const comFoto = hasReportPhoto(r);
         return (
           <View
             key={r.id}
             style={[{ backgroundColor: palette.surface, borderWidth: 1, borderColor: palette.line, borderRadius: 22, padding: 14, gap: 10 }, cardShadow(palette, 0.06)]}
           >
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-              <IconBadge icon={kindIcon(r.tipo)} colors={gradients.sensor} size={48} iconSize={26} radius={16} />
-              <View style={{ flex: 1, minWidth: 0 }}>
-                <AppText font="display" weight={700}>
-                  {r.tipo ?? 'Relato'}
-                </AppText>
-                <AppText size={14} muted>{`CEP ${r.cep} · ${sameDay ? formatTime(when) : formatDateTime(when)}`}</AppText>
+            <Pressable
+              onPress={() => router.push({ pathname: '/relato/[id]', params: { id: r.id } })}
+              accessibilityRole="button"
+              accessibilityLabel={`${r.tipo ?? 'Relato'}, CEP ${r.cep}, ${hora}. ${reportStatusStyle[r.status].label}${comFoto ? ', com foto' : ''}.`}
+              accessibilityHint="Abre os detalhes e a foto do relato"
+              style={({ pressed }) => [{ gap: 10 }, pressed && { opacity: 0.8 }]}
+            >
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                <IconBadge icon={kindIcon(r.tipo)} colors={gradients.sensor} size={48} iconSize={26} radius={16} />
+                <View style={{ flex: 1, minWidth: 0 }}>
+                  <AppText font="display" weight={700}>
+                    {r.tipo ?? 'Relato'}
+                  </AppText>
+                  <AppText size={14} muted>{`CEP ${r.cep} · ${hora}`}</AppText>
+                </View>
+                <Icon name="chevron_right" size={24 * fontScale} color={palette.inkMuted} />
               </View>
-            </View>
-            <AppText>{`${r.descricao || 'Sem descrição.'} Altura informada: ${r.alturaCm} cm.`}</AppText>
-            {r.comFoto ? (
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                <Icon name="image" size={20} color={palette.accent} />
-                <AppText size={14} muted>
-                  Com foto (demonstração)
-                </AppText>
+              <AppText numberOfLines={2}>{`${r.descricao || 'Sem descrição.'} Altura informada: ${r.alturaCm} cm.`}</AppText>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+                <StatusChip status={r.status} />
+                {comFoto ? (
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, paddingVertical: 3, paddingLeft: 6, paddingRight: 10, borderRadius: 20, backgroundColor: palette.accentBg }}>
+                    <Icon name="photo_camera" size={20 * fontScale} color={palette.navy} />
+                    <AppText size={14} weight={700} color={palette.navy} lh={1.2}>
+                      Com foto
+                    </AppText>
+                  </View>
+                ) : null}
               </View>
-            ) : null}
-            <StatusChip status={r.status} />
+            </Pressable>
             {r.status === 'pendente' ? (
               <View style={{ flexDirection: 'row', gap: 8 }}>
                 <Button

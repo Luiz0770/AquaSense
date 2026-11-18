@@ -20,6 +20,8 @@ import { buildAlert } from '../src/services/iot/alerts';
 import { parseLivePayload } from '../src/services/iot/liveSource';
 import { liveHourFromRain } from '../src/data/forecast';
 import { addRecentSearch, MAX_RECENT_SEARCHES, sanitizeRecentSearches } from '../src/utils/recentSearches';
+import { isPermissionDenied, shouldRequestLocationOnLogin } from '../src/utils/locationOnboarding';
+import { hasReportPhoto, reportNumber } from '../src/utils/reports';
 import type { Scenario } from '../src/types';
 
 let n = 0;
@@ -163,6 +165,23 @@ ok('buscas recentes: descarta dado inválido vindo do AsyncStorage', () => {
   const out = sanitizeRecentSearches([good, { ...good, lat: 'x' }, { ...good, lat: 99 }, { ...good, name: '   ' }, 7, null]);
   assert.equal(out.length, 1);
   assert.equal(out[0].name, 'Rua Silva Bueno');
+});
+
+ok('localização no primeiro login: só pede uma vez e respeita quem já escolheu', () => {
+  assert.equal(shouldRequestLocationOnLogin(false, false), true);
+  assert.equal(shouldRequestLocationOnLogin(true, false), false);
+  assert.equal(shouldRequestLocationOnLogin(false, true), false);
+  assert.equal(isPermissionDenied(Object.assign(new Error('x'), { code: 'permission-denied' })), true);
+  assert.equal(isPermissionDenied(new Error('GPS desligado')), false);
+  assert.equal(isPermissionDenied(null), false);
+});
+
+ok('relatos: foto real, marca antiga de foto e número curto', () => {
+  assert.equal(hasReportPhoto({ fotoUri: 'file:///foto.jpg' }), true);
+  assert.equal(hasReportPhoto({ comFoto: true }), true);
+  assert.equal(hasReportPhoto({}), false);
+  assert.equal(reportNumber('rep-m3x9k2-ab12cd'), '12CD');
+  assert.equal(reportNumber('a1'), '00A1');
 });
 
 console.log(`\n${n} verificações passaram.`);

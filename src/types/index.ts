@@ -55,8 +55,10 @@ export interface Report {
   autorId?: string;
   /** O que a pessoa viu (Rua alagada, Chuva forte...). Relatos antigos não têm. */
   tipo?: ReportKind;
-  /** Foto anexada (demonstração: só marca que houve foto). */
+  /** Se o relato tem foto. Relatos antigos só têm esta marca (sem a imagem): mostram a foto de demonstração. */
   comFoto?: boolean;
+  /** Endereço local (file://) da foto escolhida ou tirada pelo cidadão, guardada neste aparelho. */
+  fotoUri?: string;
 }
 
 export type FontSize = 'normal' | 'grande' | 'muito_grande';

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Pressable, View } from 'react-native';
+import { Image, Pressable, StyleSheet, View } from 'react-native';
 import { useAuth } from '@/contexts/AuthContext';
 import { useMonitoring } from '@/contexts/MonitoringContext';
 import { useTheme } from '@/contexts/SettingsContext';
@@ -8,6 +8,7 @@ import { pilotPoint } from '@/data/pilotPoint';
 import { formatTime } from '@/utils/format';
 import type { Report, ReportKind } from '@/types';
 import { kindIcon, REPORT_KINDS } from '@/data/reportKinds';
+import { pickReportPhoto, type PhotoSource } from '@/services/photoService';
 import { gradients, stage } from '@/styles/theme';
 import { AppText, ErrorText } from '@/components/AppText';
 import { Button } from '@/components/Button';
@@ -21,6 +22,58 @@ import { TextField } from '@/components/TextField';
 const MAX_DESC = 280;
 
 type Mode = 'hub' | 'form';
+
+/** Foto do relato: tirar com a câmera ou escolher da galeria; com foto, mostra a prévia com Trocar e Remover. */
+function PhotoField({
+  uri,
+  error,
+  busy,
+  onPick,
+  onRemove,
+}: {
+  uri: string | null;
+  error: string | null;
+  busy: boolean;
+  onPick: (source: PhotoSource) => void;
+  onRemove: () => void;
+}) {
+  const { palette, fontScale } = useTheme();
+
+  if (uri) {
+    return (
+      <View style={{ gap: 8 }}>
+        <AppText weight={700}>Foto</AppText>
+        <View style={{ width: '100%', aspectRatio: 16 / 10, borderRadius: 20, overflow: 'hidden', backgroundColor: '#2F4A5B' }}>
+          <Image source={{ uri }} style={StyleSheet.absoluteFill} resizeMode="cover" accessible accessibilityLabel="Foto que será enviada com o relato" />
+        </View>
+        <View style={{ flexDirection: 'row', gap: 8 }}>
+          <Button label="Trocar foto" icon="photo_library" variant="outline" height={48} compact disabled={busy} style={{ flex: 1 }} onPress={() => onPick('library')} />
+          <Button label="Remover" icon="delete" variant="outline" height={48} compact textColor={palette.error} style={{ flex: 1, borderColor: palette.border }} onPress={onRemove} />
+        </View>
+        {error ? <ErrorText>{error}</ErrorText> : null}
+      </View>
+    );
+  }
+
+  return (
+    <View style={{ padding: 14, borderRadius: 20, borderWidth: 2, borderStyle: 'dashed', borderColor: palette.border, backgroundColor: palette.surface, gap: 12 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+        <Icon name="add_a_photo" size={30 * fontScale} color={palette.accent} />
+        <View style={{ flex: 1 }}>
+          <AppText weight={700}>Adicionar foto (opcional)</AppText>
+          <AppText size={14} muted>
+            Ajuda o agente a conferir o relato.
+          </AppText>
+        </View>
+      </View>
+      <View style={{ flexDirection: 'row', gap: 8 }}>
+        <Button label="Tirar foto" icon="photo_camera" variant="soft" height={48} compact disabled={busy} style={{ flex: 1 }} onPress={() => onPick('camera')} />
+        <Button label="Galeria" icon="photo_library" variant="soft" height={48} compact disabled={busy} style={{ flex: 1 }} onPress={() => onPick('library')} />
+      </View>
+      {error ? <ErrorText>{error}</ErrorText> : null}
+    </View>
+  );
+}
 
 /** Card de um relato próprio, igual ao que existia no formulário. */
 function MyReportCard({ report }: { report: Report }) {
@@ -109,7 +162,9 @@ export default function RelatarScreen() {
   const [mode, setMode] = useState<Mode>('hub');
   const [tipo, setTipo] = useState<ReportKind | null>(null);
   const [tipoErr, setTipoErr] = useState<string | null>(null);
-  const [foto, setFoto] = useState(false);
+  const [fotoUri, setFotoUri] = useState<string | null>(null);
+  const [fotoErr, setFotoErr] = useState<string | null>(null);
+  const [picking, setPicking] = useState(false);
   const [sent, setSent] = useState(false);
   const mine = reports.filter((r) => r.autorId && r.autorId === user?.id);
 
@@ -118,11 +173,22 @@ export default function RelatarScreen() {
     setTipoErr(tErr);
     const data = form.submit();
     if (!data || tErr || !tipo) return;
-    addReport({ ...data, tipo, comFoto: foto });
+    addReport({ ...data, tipo, comFoto: !!fotoUri, ...(fotoUri ? { fotoUri } : {}) });
     form.reset();
     setTipo(null);
-    setFoto(false);
+    setFotoUri(null);
+    setFotoErr(null);
     setSent(true);
+  };
+
+  const choosePhoto = async (source: PhotoSource) => {
+    setFotoErr(null);
+    setPicking(true);
+    const res = await pickReportPhoto(source);
+    setPicking(false);
+    if (res.ok) setFotoUri(res.uri);
+    else if (res.reason === 'permission') setFotoErr('Sem permissão para usar a câmera. Libere nas configurações do celular ou escolha uma foto da galeria.');
+    else if (res.reason === 'error') setFotoErr('Não foi possível abrir a foto. Tente de novo.');
   };
 
   const goHub = () => {
@@ -217,29 +283,16 @@ export default function RelatarScreen() {
               </View>
               {tipoErr ? <ErrorText>{tipoErr}</ErrorText> : null}
 
-              <Pressable
-                onPress={() => setFoto((v) => !v)}
-                accessibilityRole="checkbox"
-                accessibilityState={{ checked: foto }}
-                accessibilityLabel={foto ? 'Foto anexada (demonstração). Toque para remover.' : 'Adicionar foto (opcional)'}
-                style={{
-                  minHeight: 72,
-                  paddingHorizontal: 16,
-                  borderRadius: 20,
-                  borderWidth: 2,
-                  borderStyle: 'dashed',
-                  borderColor: foto ? palette.accent : palette.border,
-                  backgroundColor: foto ? palette.accentBg : palette.surface,
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  gap: 12,
+              <PhotoField
+                uri={fotoUri}
+                error={fotoErr}
+                busy={picking}
+                onPick={choosePhoto}
+                onRemove={() => {
+                  setFotoUri(null);
+                  setFotoErr(null);
                 }}
-              >
-                <Icon name={foto ? 'image' : 'add_a_photo'} size={32 * fontScale} color={palette.accent} />
-                <AppText weight={700} style={{ flex: 1 }}>
-                  {foto ? 'Foto anexada (demonstração)' : 'Adicionar foto (opcional)'}
-                </AppText>
-              </Pressable>
+              />
 
               <TextField
                 label="Onde? (CEP)"

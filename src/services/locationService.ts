@@ -28,3 +28,12 @@ export async function loadRecentSearches(): Promise<SelectedLocation[]> {
 export function saveRecentSearches(list: SelectedLocation[]): Promise<void> {
   return setItem(StorageKeys.recentSearches, list);
 }
+
+/** Se o app já pediu a localização atual no primeiro login (para não pedir de novo a cada entrada). */
+export function loadLocationAsked(): Promise<boolean> {
+  return getItem<boolean>(StorageKeys.locationAsked, false);
+}
+
+export function saveLocationAsked(): Promise<void> {
+  return setItem(StorageKeys.locationAsked, true);
+}

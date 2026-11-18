@@ -19,6 +19,8 @@ function demoReports(now: Date): Report[] {
       alturaCm: 15,
       descricao: 'Água na altura do meio-fio.',
       status: 'pendente',
+      tipo: 'Rua alagada',
+      comFoto: true,
     },
     {
       id: makeId('rep'),
@@ -61,6 +63,7 @@ export interface NewReportInput {
   autorId?: string;
   tipo?: ReportKind;
   comFoto?: boolean;
+  fotoUri?: string;
 }
 
 export function createReport(input: NewReportInput): Report {
@@ -74,7 +77,8 @@ export function createReport(input: NewReportInput): Report {
     status: 'pendente',
     autorId: input.autorId,
     ...(input.tipo ? { tipo: input.tipo } : {}),
-    ...(input.comFoto ? { comFoto: true } : {}),
+    ...(input.comFoto || input.fotoUri ? { comFoto: true } : {}),
+    ...(input.fotoUri ? { fotoUri: input.fotoUri } : {}),
   };
 }
 

@@ -37,6 +37,14 @@
       "expo-router",
       "expo-font",
       [
+        "expo-image-picker",
+        {
+          "photosPermission": "O AquaSense usa suas fotos só quando você escolhe uma para anexar a um relato.",
+          "cameraPermission": "O AquaSense usa a câmera para você tirar uma foto e anexar a um relato.",
+          "microphonePermission": false
+        }
+      ],
+      [
         "expo-location",
         {
           "locationWhenInUsePermission": "O AquaSense usa sua localização aproximada para mostrar a previsão de chuva do seu bairro. A localização não é salva nem compartilhada."
