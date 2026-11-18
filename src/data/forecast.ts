@@ -50,3 +50,18 @@ export function forecastIcon(prob: number, mm: number): ForecastIcon {
   if (prob < 60) return 'cloud';
   return mm >= 6 ? 'thunderstorm' : 'rainy';
 }
+
+/** Chuva medida (mm/h) a partir da qual o indicador de chance chega a 100%. */
+const LIVE_RAIN_FULL_MM = 20;
+
+/**
+ * Primeiro quadradinho da previsão ("Em 1 h") quando a fonte é o sensor ESP32 (Wokwi):
+ * no lugar do valor da API, usa a chuva medida agora. A "chance" é derivada dos mm/h
+ * (0 mm/h = 0%, 20 mm/h ou mais = 100%), para a barra e o ícone acompanharem o sensor.
+ */
+export function liveHourFromRain(base: HourForecast, chuvaMm: number): HourForecast {
+  const mm = Math.max(0, Math.round(chuvaMm * 10) / 10);
+  const prob = Math.min(100, Math.round((mm / LIVE_RAIN_FULL_MM) * 100));
+  const icon: ForecastIcon = mm <= 0 ? 'partly_cloudy_day' : mm >= 6 ? 'thunderstorm' : 'rainy';
+  return { hora: base.hora, prob, mm, icon };
+}

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Defs, RadialGradient, Rect, Stop } from 'react-native-svg';
@@ -7,7 +7,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useMonitoring } from '@/contexts/MonitoringContext';
 import { useAppLocation } from '@/contexts/LocationContext';
 import { useTheme } from '@/contexts/SettingsContext';
-import { forecastIcon } from '@/data/forecast';
+import { forecastIcon, liveHourFromRain } from '@/data/forecast';
 import { useForecast } from '@/hooks/useForecast';
 import { LEVEL_ORDER } from '@/services/iot/thresholds';
 import { formatTime } from '@/utils/format';
@@ -65,12 +65,19 @@ export default function InicioScreen() {
   const trend = trendOf(readings);
   const firstName = (user?.name ?? '').split(' ')[0] || 'Olá';
 
+  // Com o ESP32 (Wokwi) ao vivo, o "Em 1 h" segue a chuva medida pelo sensor (e pelo Node-RED).
+  const liveRain = source === 'esp32';
+  const hours = useMemo(
+    () => (liveRain && forecast.hours.length ? [liveHourFromRain(forecast.hours[0], current.chuvaMm), ...forecast.hours.slice(1)] : forecast.hours),
+    [liveRain, forecast.hours, current.chuvaMm],
+  );
+
   const summary = (() => {
     if (fcTab === 'dias') {
       const d = forecast.days.find((x) => x.prob >= 60);
       return d ? { icon: 'rainy' as const, text: `Chuva provável: ${d.dia.toLowerCase()}` } : { icon: 'wb_sunny' as const, text: 'Sem chuva forte nos próximos dias' };
     }
-    const f = forecast.hours.find((x) => x.prob >= 60);
+    const f = hours.find((x) => x.prob >= 60);
     return f ? { icon: 'rainy' as const, text: `Chuva provável a partir das ${pad(f.hora)}h` } : { icon: 'wb_sunny' as const, text: 'Sem chuva nas próximas horas' };
   })();
 
@@ -219,13 +226,13 @@ export default function InicioScreen() {
           </View>
         ) : fcTab === 'horas' ? (
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -16 }} contentContainerStyle={{ gap: 8, paddingHorizontal: 16, paddingTop: 2, paddingBottom: 6 }}>
-            {forecast.hours.map((f, i) => {
+            {hours.map((f, i) => {
               const strong = f.prob >= 60;
               return (
                 <View
                   key={i}
                   accessible
-                  accessibilityLabel={`${pad(f.hora)}h: ${f.prob}% de chance de chuva, ${fmtN(f.mm)} mm`}
+                  accessibilityLabel={i === 0 && liveRain ? `Em 1 hora: chuva medida pelo sensor ESP32, ${fmtN(f.mm)} milímetros por hora` : `${pad(f.hora)}h: ${f.prob}% de chance de chuva, ${fmtN(f.mm)} mm`}
                   style={{ width: 68 * Math.min(fontScale, 1.15), paddingVertical: 10, paddingHorizontal: 6, borderRadius: 18, borderWidth: 1, borderColor: strong ? chart.rain : palette.line, backgroundColor: strong ? palette.accentBg : palette.surface, alignItems: 'center', gap: 6 }}
                 >
                   <AppText size={14} weight={700} muted numberOfLines={1}>
@@ -274,6 +281,11 @@ export default function InicioScreen() {
           </AppText>
         ) : null}
         <AppText size={14} muted>{`Previsão de chuva · ${selected.name}`}</AppText>
+        {liveRain && fcTab === 'horas' ? (
+          <AppText size={14} muted>
+            Em 1 h: chuva medida pelo sensor ESP32
+          </AppText>
+        ) : null}
         <AppText size={14} muted>
           Fonte: Open-Meteo (CC BY 4.0)
         </AppText>

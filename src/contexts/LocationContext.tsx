@@ -1,5 +1,5 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
-import { MONITORED_POINTS } from '@/data/locations';
+import { DEFAULT_LOCATION } from '@/data/locations';
 import { loadLastGpsFix, loadSelectedLocation, saveLastGpsFix, saveSelectedLocation } from '@/services/locationService';
 import type { GpsFix, SelectedLocation } from '@/types';
 
@@ -14,15 +14,6 @@ interface LocationValue {
   selectLocation: (loc: SelectedLocation) => void;
   selectFromGps: (fix: GpsFix) => void;
 }
-
-const [defaultPoint] = MONITORED_POINTS;
-const DEFAULT_LOCATION: SelectedLocation = {
-  id: defaultPoint.id,
-  name: defaultPoint.name,
-  subtitle: defaultPoint.subtitle,
-  lat: defaultPoint.lat,
-  lon: defaultPoint.lon,
-};
 
 const LocationContext = createContext<LocationValue | null>(null);
 

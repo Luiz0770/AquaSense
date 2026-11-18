@@ -18,6 +18,8 @@ import { levelFor, LIMITS } from '../src/services/iot/thresholds';
 import { initialReading, nextReading, PROFILES } from '../src/services/iot/simulator';
 import { buildAlert } from '../src/services/iot/alerts';
 import { parseLivePayload } from '../src/services/iot/liveSource';
+import { liveHourFromRain } from '../src/data/forecast';
+import { addRecentSearch, MAX_RECENT_SEARCHES, sanitizeRecentSearches } from '../src/utils/recentSearches';
 import type { Scenario } from '../src/types';
 
 let n = 0;
@@ -131,6 +133,36 @@ ok('MQTT: aceita o JSON do ESP32 e descarta mensagens inválidas', () => {
   assert.equal(parseLivePayload('{"nivelCm":-5,"chuvaMm":1}'), null);
   assert.equal(parseLivePayload('{"nivelCm":10,"chuvaMm":9999}'), null);
   assert.equal(parseLivePayload('{"sensorId":"<script>","nivelCm":10,"chuvaMm":1}')?.sensorId, 'ESP32-01');
+});
+
+ok('previsão: "Em 1 h" segue a chuva medida pelo ESP32', () => {
+  const base = { hora: 15, prob: 35, mm: 0.4, icon: 'cloud' as const };
+  assert.deepEqual(liveHourFromRain(base, 0), { hora: 15, prob: 0, mm: 0, icon: 'partly_cloudy_day' });
+  assert.deepEqual(liveHourFromRain(base, 3), { hora: 15, prob: 15, mm: 3, icon: 'rainy' });
+  assert.deepEqual(liveHourFromRain(base, 12.44), { hora: 15, prob: 62, mm: 12.4, icon: 'thunderstorm' });
+  assert.equal(liveHourFromRain(base, 50).prob, 100);
+  assert.equal(liveHourFromRain(base, -2).mm, 0);
+});
+
+ok('buscas recentes: mais nova no topo, sem repetir e com limite', () => {
+  const mk = (name: string) => ({ id: `busca:${name}`, name, subtitle: 'Endereço digitado por você', lat: -23.5, lon: -46.6 });
+  let list = [] as ReturnType<typeof sanitizeRecentSearches>;
+  for (const nome of ['Rua A', 'Rua B', 'Rua C']) list = addRecentSearch(list, mk(nome));
+  assert.deepEqual(list.map((x) => x.name), ['Rua C', 'Rua B', 'Rua A']);
+  list = addRecentSearch(list, mk('rua a'));
+  assert.deepEqual(list.map((x) => x.name), ['rua a', 'Rua C', 'Rua B']);
+  for (const nome of ['D', 'E', 'F', 'G']) list = addRecentSearch(list, mk(nome));
+  assert.equal(list.length, MAX_RECENT_SEARCHES);
+  assert.equal(list[0].name, 'G');
+});
+
+ok('buscas recentes: descarta dado inválido vindo do AsyncStorage', () => {
+  assert.deepEqual(sanitizeRecentSearches('x'), []);
+  assert.deepEqual(sanitizeRecentSearches(null), []);
+  const good = { id: 'busca:rua', name: '  Rua Silva Bueno ', subtitle: 's', lat: -23.58, lon: -46.6 };
+  const out = sanitizeRecentSearches([good, { ...good, lat: 'x' }, { ...good, lat: 99 }, { ...good, name: '   ' }, 7, null]);
+  assert.equal(out.length, 1);
+  assert.equal(out[0].name, 'Rua Silva Bueno');
 });
 
 console.log(`\n${n} verificações passaram.`);

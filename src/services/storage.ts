@@ -18,6 +18,7 @@ export const StorageKeys = {
   settings: 'settings',
   selectedLocation: 'selected-location',
   lastGpsFix: 'last-gps-fix',
+  recentSearches: 'recent-searches',
 } as const;
 
 export async function getItem<T>(key: string, fallback: T): Promise<T> {

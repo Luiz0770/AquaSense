@@ -1,14 +1,14 @@
-import React, { useCallback, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, Easing, Pressable, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useAppLocation, type SelectedLocation } from '@/contexts/LocationContext';
 import { useTheme } from '@/contexts/SettingsContext';
-import { BAIRROS, MONITORED_POINTS, type LocationOption } from '@/data/locations';
+import { loadRecentSearches, saveRecentSearches } from '@/services/locationService';
 import { geocodeAddress } from '@/services/weather';
 import { getCurrentLocationFix } from '@/services/geolocation';
 import { normalizeText } from '@/utils/format';
-import { haversineKm } from '@/utils/geo';
+import { addRecentSearch } from '@/utils/recentSearches';
 import { cardShadow } from '@/styles/theme';
 import { AppText, ErrorText } from '@/components/AppText';
 import { ScreenTitle, SectionTitle } from '@/components/Controls';
@@ -18,9 +18,7 @@ import { Screen } from '@/components/Screen';
 import { Gradient } from '@/components/Surfaces';
 import { TextField } from '@/components/TextField';
 
-const fmtKm = (km: number) => `a ${String(Math.round(km * 10) / 10).replace('.', ',')} km`;
-
-/** Item de local (ponto monitorado ou bairro): card branco, chip de ícone e estado selecionado em gradiente azul. */
+/** Item de busca recente: card branco, chip de ícone e estado selecionado em gradiente azul. */
 function LocationRow({
   icon,
   name,
@@ -85,12 +83,13 @@ type GpsState = 'idle' | 'loading' | 'error';
 export default function LocationScreen() {
   const router = useRouter();
   const { palette, fontScale } = useTheme();
-  const { selected, lastFix, selectLocation, selectFromGps } = useAppLocation();
+  const { selected, selectLocation, selectFromGps } = useAppLocation();
   const [query, setQuery] = useState('');
   const [gpsState, setGpsState] = useState<GpsState>('idle');
   const [gpsError, setGpsError] = useState<string | null>(null);
   const [customError, setCustomError] = useState<string | null>(null);
   const [resolvingCustom, setResolvingCustom] = useState(false);
+  const [recent, setRecent] = useState<SelectedLocation[]>([]);
   const alive = useRef(true);
 
   const spin = useLoop(900, { easing: Easing.linear });
@@ -98,33 +97,24 @@ export default function LocationScreen() {
 
   const normalizedQuery = normalizeText(query);
 
-  const withDistance = useCallback(
-    (list: LocationOption[]) => {
-      const withKm = list.map((item) => ({ item, km: lastFix ? haversineKm(lastFix.lat, lastFix.lon, item.lat, item.lon) : null }));
-      if (lastFix) withKm.sort((a, b) => (a.km ?? 0) - (b.km ?? 0));
-      return withKm;
-    },
-    [lastFix],
+  // Buscas recentes: só os endereços que a pessoa digitou e escolheu, guardados neste aparelho.
+  useEffect(() => {
+    let active = true;
+    void loadRecentSearches().then((list) => {
+      if (active) setRecent(list);
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const filteredRecent = useMemo(
+    () => (normalizedQuery ? recent.filter((x) => normalizeText(x.name).includes(normalizedQuery)) : recent),
+    [recent, normalizedQuery],
   );
 
-  const filteredPoints = useMemo(() => {
-    const base = withDistance(MONITORED_POINTS);
-    if (!normalizedQuery) return base;
-    return base.filter((x) => normalizeText(x.item.name).includes(normalizedQuery));
-  }, [normalizedQuery, withDistance]);
-
-  const filteredBairros = useMemo(() => {
-    const base = withDistance(BAIRROS);
-    if (!normalizedQuery) return base;
-    return base.filter((x) => normalizeText(x.item.name).includes(normalizedQuery));
-  }, [normalizedQuery, withDistance]);
-
-  const exactMatch =
-    normalizedQuery.length > 0 &&
-    (MONITORED_POINTS.some((p) => normalizeText(p.name) === normalizedQuery) || BAIRROS.some((b) => normalizeText(b.name) === normalizedQuery));
-
+  const exactMatch = normalizedQuery.length > 0 && recent.some((x) => normalizeText(x.name) === normalizedQuery);
   const showCustomOption = query.trim().length >= 3 && !exactMatch;
-  const nothingFound = normalizedQuery.length > 0 && filteredPoints.length === 0 && filteredBairros.length === 0;
 
   const goBackHome = () => {
     if (router.canGoBack()) router.back();
@@ -136,8 +126,21 @@ export default function LocationScreen() {
     goBackHome();
   };
 
-  const pickOption = (opt: LocationOption, subtitle: string, km: number | null) => {
-    pick({ id: opt.id, name: opt.name, subtitle: km !== null ? `${subtitle} · ${fmtKm(km)}` : subtitle, lat: opt.lat, lon: opt.lon });
+  /** Guarda a busca no topo da lista (sem repetir) e já grava no aparelho. */
+  const remember = (loc: SelectedLocation) => {
+    const next = addRecentSearch(recent, loc);
+    setRecent(next);
+    void saveRecentSearches(next);
+  };
+
+  const pickRecent = (loc: SelectedLocation) => {
+    remember(loc);
+    pick(loc);
+  };
+
+  const clearRecent = () => {
+    setRecent([]);
+    void saveRecentSearches([]);
   };
 
   const handleGps = async () => {
@@ -168,7 +171,9 @@ export default function LocationScreen() {
         setCustomError('Não encontramos esse endereço. Verifique o que foi digitado.');
         return;
       }
-      pick({ id: 'custom', name: text, subtitle: 'Endereço digitado por você', lat: result.lat, lon: result.lon });
+      const loc: SelectedLocation = { id: `busca:${normalizeText(text)}`, name: text, subtitle: 'Endereço digitado por você', lat: result.lat, lon: result.lon };
+      remember(loc);
+      pick(loc);
     } catch {
       if (alive.current) setCustomError('Não encontramos esse endereço. Verifique o que foi digitado.');
     } finally {
@@ -176,7 +181,7 @@ export default function LocationScreen() {
     }
   };
 
-  React.useEffect(
+  useEffect(
     () => () => {
       alive.current = false;
     },
@@ -270,48 +275,48 @@ export default function LocationScreen() {
       ) : null}
       {customError ? <ErrorText>{customError}</ErrorText> : null}
 
-      {nothingFound ? (
+      {filteredRecent.length > 0 ? (
+        <View accessibilityRole="radiogroup" accessibilityLabel="Buscas recentes" style={{ gap: 10 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+            <View style={{ flex: 1 }}>
+              <SectionTitle>Buscas recentes</SectionTitle>
+            </View>
+            <Pressable
+              onPress={clearRecent}
+              accessibilityRole="button"
+              accessibilityLabel="Limpar buscas recentes"
+              hitSlop={{ top: 6, bottom: 6, left: 8, right: 8 }}
+              style={({ pressed }) => [{ minHeight: 44, paddingHorizontal: 8, flexDirection: 'row', alignItems: 'center', gap: 4 }, pressed && { opacity: 0.7 }]}
+            >
+              <Icon name="delete_sweep" size={22 * fontScale} color={palette.accent} />
+              <AppText size={14} weight={700} color={palette.accent}>
+                Limpar
+              </AppText>
+            </Pressable>
+          </View>
+          {filteredRecent.map((item) => (
+            <LocationRow
+              key={item.id}
+              icon="schedule"
+              name={item.name}
+              subtitle={item.subtitle}
+              selected={selected.id === item.id}
+              onPress={() => pickRecent(item)}
+            />
+          ))}
+        </View>
+      ) : null}
+
+      {recent.length === 0 && !normalizedQuery ? (
         <AppText size={14} muted style={{ marginHorizontal: 4 }}>
-          Nenhum bairro encontrado na lista. Você pode usar o texto digitado.
+          Suas buscas recentes vão aparecer aqui.
         </AppText>
-      ) : null}
-
-      {filteredPoints.length > 0 ? (
-        <View accessibilityRole="radiogroup" accessibilityLabel="Pontos monitorados" style={{ gap: 10 }}>
-          <SectionTitle>Pontos monitorados</SectionTitle>
-          {filteredPoints.map(({ item, km }) => (
-            <LocationRow
-              key={item.id}
-              icon="sensors"
-              name={item.name}
-              subtitle={km !== null ? `${item.subtitle} · ${fmtKm(km)}` : item.subtitle}
-              selected={selected.id === item.id}
-              onPress={() => pickOption(item, item.subtitle, km)}
-            />
-          ))}
-        </View>
-      ) : null}
-
-      {filteredBairros.length > 0 ? (
-        <View accessibilityRole="radiogroup" accessibilityLabel="Bairros" style={{ gap: 10 }}>
-          <SectionTitle>Bairros</SectionTitle>
-          {filteredBairros.map(({ item, km }) => (
-            <LocationRow
-              key={item.id}
-              icon="pin_drop"
-              name={item.name}
-              subtitle={km !== null ? `${item.subtitle} · ${fmtKm(km)}` : item.subtitle}
-              selected={selected.id === item.id}
-              onPress={() => pickOption(item, item.subtitle, km)}
-            />
-          ))}
-        </View>
       ) : null}
 
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, padding: 14, borderRadius: 20, borderWidth: 1, borderColor: palette.line, backgroundColor: palette.surface }}>
         <Icon name="shield" size={26 * fontScale} color={palette.accent} />
         <AppText size={14} muted style={{ flex: 1 }}>
-          Usamos só a localização aproximada, sem salvar. O nível da água continua vindo do sensor PT-07.
+          Guardamos só as suas últimas buscas, neste aparelho. O nível da água continua vindo do sensor PT-07.
         </AppText>
       </View>
     </Screen>
