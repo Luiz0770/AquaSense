@@ -116,9 +116,9 @@ Prints do app (pasta `docs/prints/`).
 
 **Cidadão**
 
-| Login | Início (Normal) | Início (Alerta) |
+| Login | Início (Normal) |
 | --- | --- | --- |
-| ![Login](docs/prints/01-login.png) | ![Início em Normal](docs/prints/02-inicio-normal.png) | ![Início em Alerta](docs/prints/03-inicio-alerta.png) |
+| ![Login](docs/prints/01-login.png) | ![Início em Normal](docs/prints/02-inicio-normal.png) |
 
 | Sensor (carrossel) | Relatar | Histórico |
 | --- | --- | --- |
@@ -130,9 +130,9 @@ Prints do app (pasta `docs/prints/`).
 | --- | --- | --- |
 | ![Painel](docs/prints/07-painel.png) | ![Relatos](docs/prints/08-relatos.png) | ![Detalhe do relato](docs/prints/09-relato.png) |
 
-| Simulação | Sensor (visão do agente) | Acessibilidade (Perfil) |
+| Simulação | Acessibilidade (Perfil) |
 | --- | --- | --- |
-| ![Simulação](docs/prints/10-simulacao.png) | ![Sensor do agente](docs/prints/11-sensor-agente.png) | ![Perfil](docs/prints/12-perfil.png) |
+| ![Simulação](docs/prints/10-simulacao.png) | ![Perfil](docs/prints/12-perfil.png) |
 
 ## Entrega
 
