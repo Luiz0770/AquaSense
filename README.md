@@ -118,21 +118,21 @@ Prints do app (pasta `docs/prints/`).
 
 | Login | Início (Normal) |
 | --- | --- |
-| ![Login](docs/prints/01-login.jpeg) | ![Início em Normal](docs/prints/02-inicio-normal.jpeg) |
+| ![Login](assets/prints/01-login.jpeg) | ![Início em Normal](assets/prints/02-inicio-normal.jpeg) |
 
 | Sensor (carrossel) | Relatar | Histórico |
 | --- | --- | --- |
-| ![Sensor](docs/prints/04-sensor.jpeg) | ![Relatar](docs/prints/05-relatar.jpeg) | ![Histórico](docs/prints/06-historico.jpeg) |
+| ![Sensor](assets/prints/04-sensor.jpeg) | ![Relatar](assets/prints/05-relatar.jpeg) | ![Histórico](assets/prints/06-historico.jpeg) |
 
 **Agente**
 
 | Painel (radar) | Relatos | Detalhe do relato |
 | --- | --- | --- |
-| ![Painel](docs/prints/07-painel.jpeg) | ![Relatos](docs/prints/08-relatos.jpeg) | ![Detalhe do relato](docs/prints/09-relato.jpeg) |
+| ![Painel](assets/prints/07-painel.jpeg) | ![Relatos](assets/prints/08-relatos.jpeg) | ![Detalhe do relato](assets/prints/09-relato.jpeg) |
 
 | Simulação | Acessibilidade (Perfil) |
 | --- | --- |
-| ![Simulação](docs/prints/10-simulacao.jpeg) | ![Perfil](docs/prints/12-perfil.jpeg) |
+| ![Simulação](assets/prints/10-simulacao.jpeg) | ![Perfil](assets/prints/12-perfil.jpeg) |
 
 ## Entrega
 
