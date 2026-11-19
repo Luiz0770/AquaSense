@@ -3,7 +3,7 @@
 Aplicativo mobile de **monitoramento de alagamentos** para a Global Solution 2026.2 da FIAP (desafio CitizenTech, Mobile Development & IoT).
 O cidadão consulta o nível da água de um ponto monitorado, recebe alertas por estado e registra o que vê. O agente valida os relatos e controla a simulação.
 
-> O AquaSense **não substitui** os alertas da Defesa Civil e do CGE. Os dados do sensor são **simulados** e as leituras são **estimativas não oficiais**.
+> O AquaSense **não substitui** os alertas da Defesa Civil e do CGE. Os dados dos sensores são **simulados** (ou vêm de um ESP32 simulado no Wokwi) e as leituras são **estimativas não oficiais**.
 
 ## Ficha CitizenTech
 
@@ -69,7 +69,7 @@ npm run typecheck   # checagem de tipos
 npm run check       # testes da lógica (máscaras, validadores, simulador, alertas)
 ```
 
-Para ver o alerta de nível, abra o perfil de agente, vá em **Simulação** e escolha **Forte**: em cerca de um minuto o estado sobe até Crítico.
+Para ver o alerta de nível, abra o perfil de agente, vá em **Simulação** e escolha **Extrema**: em cerca de um minuto o estado sobe, passando por Atenção e Alerta, até Crítico (cada mudança gera um alerta). Os cenários **Moderada** e **Forte** deixam o sensor parado em Atenção e Alerta; **Clima real** usa a chuva da Open-Meteo e mantém o nível em Normal.
 
 ## API de previsão
 
@@ -105,14 +105,34 @@ scripts/check-logic.ts
 
 ## Limitações conhecidas
 
-- Sem o Wokwi rodando, os sensores são simulados no próprio app.
+- Sem o Wokwi rodando, os sensores são simulados no próprio app. Com ele rodando (pasta `wokwi/`, com o painel de controle em `node-red/`), cada um dos 3 sensores passa a mostrar os dados reais do ESP32 por MQTT.
 - Os limiares 20/40/70 cm são valores de demonstração e devem ser confirmados com o circuito do sensor.
 - Os dados de histórico e ocorrências são de demonstração.
 - Contas e relatos ficam só no aparelho (sem servidor).
 
 ## Telas
 
-<!-- Adicione aqui os prints: login, início (Normal e Alerta), relatar, painel do agente, simulação. -->
+Prints do app (pasta `docs/prints/`).
+
+**Cidadão**
+
+| Login | Início (Normal) | Início (Alerta) |
+| --- | --- | --- |
+| ![Login](docs/prints/01-login.png) | ![Início em Normal](docs/prints/02-inicio-normal.png) | ![Início em Alerta](docs/prints/03-inicio-alerta.png) |
+
+| Sensor (carrossel) | Relatar | Histórico |
+| --- | --- | --- |
+| ![Sensor](docs/prints/04-sensor.png) | ![Relatar](docs/prints/05-relatar.png) | ![Histórico](docs/prints/06-historico.png) |
+
+**Agente**
+
+| Painel (radar) | Relatos | Detalhe do relato |
+| --- | --- | --- |
+| ![Painel](docs/prints/07-painel.png) | ![Relatos](docs/prints/08-relatos.png) | ![Detalhe do relato](docs/prints/09-relato.png) |
+
+| Simulação | Sensor (visão do agente) | Acessibilidade (Perfil) |
+| --- | --- | --- |
+| ![Simulação](docs/prints/10-simulacao.png) | ![Sensor do agente](docs/prints/11-sensor-agente.png) | ![Perfil](docs/prints/12-perfil.png) |
 
 ## Entrega
 
