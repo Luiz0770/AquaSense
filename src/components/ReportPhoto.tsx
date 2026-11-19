@@ -4,6 +4,7 @@ import Svg, { Defs, Line, LinearGradient, Path, Polygon, Rect, Stop } from 'reac
 import type { Report } from '@/types';
 import { AppText } from './AppText';
 import { Icon } from './Icon';
+import { svgImage } from './svgA11y';
 
 type Fit = 'cover' | 'contain';
 
@@ -26,8 +27,7 @@ function DemoPhoto({ id, fit }: { id: string; fit: Fit }) {
       height="100%"
       viewBox="0 0 320 200"
       preserveAspectRatio={`xMidYMid ${fit === 'cover' ? 'slice' : 'meet'}`}
-      accessible
-      accessibilityLabel="Foto de demonstração: rua com água acumulada em frente às casas e um carro parcialmente coberto"
+      {...svgImage('Foto de demonstração: rua com água acumulada em frente às casas e um carro parcialmente coberto')}
     >
       <Defs>
         <LinearGradient id={`${id}s`} x1="0" y1="0" x2="0" y2="1">

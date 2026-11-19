@@ -1,11 +1,17 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Animated, Easing, type StyleProp, type ViewStyle } from 'react-native';
+import { Animated, Easing, Platform, type StyleProp, type ViewStyle } from 'react-native';
 import { useTheme } from '@/contexts/SettingsContext';
 
 /**
  * Animações do design (aqWave, aqScan, aqBubble, aqGlow, aqPing, aqSweep, aqDrop, aqHoloIn, aqIn).
  * Com "Reduzir movimento" ligado, tudo fica parado, como o @media (prefers-reduced-motion) do design.
  */
+
+/**
+ * A web não tem o módulo nativo de animação: lá o React Native avisa e cai para JS.
+ * Usamos o driver nativo só no celular e evitamos o aviso no navegador.
+ */
+export const NATIVE_DRIVER = Platform.OS !== 'web';
 
 /** Valor que vai de 0 a 1 em loop. Parado em `rest` quando o movimento está reduzido. */
 export function useLoop(
@@ -26,9 +32,9 @@ export function useLoop(
       return;
     }
     value.setValue(0);
-    const forward = Animated.timing(value, { toValue: 1, duration: durationMs, easing: ease.current, useNativeDriver: true });
+    const forward = Animated.timing(value, { toValue: 1, duration: durationMs, easing: ease.current, useNativeDriver: NATIVE_DRIVER });
     const seq = pingPong
-      ? Animated.sequence([forward, Animated.timing(value, { toValue: 0, duration: durationMs, easing: ease.current, useNativeDriver: true })])
+      ? Animated.sequence([forward, Animated.timing(value, { toValue: 0, duration: durationMs, easing: ease.current, useNativeDriver: NATIVE_DRIVER })])
       : forward;
     const loop = Animated.loop(seq, { iterations: -1, resetBeforeIteration: !pingPong });
     const t = setTimeout(() => loop.start(), delayMs);
@@ -52,7 +58,7 @@ export function useEnter(durationMs: number, delayMs = 0, easing = ENTER_EASE) {
       value.setValue(1);
       return;
     }
-    const anim = Animated.timing(value, { toValue: 1, duration: durationMs, delay: delayMs, easing, useNativeDriver: true });
+    const anim = Animated.timing(value, { toValue: 1, duration: durationMs, delay: delayMs, easing, useNativeDriver: NATIVE_DRIVER });
     anim.start();
     return () => anim.stop();
   }, [reduceMotion, durationMs, delayMs, easing, value]);

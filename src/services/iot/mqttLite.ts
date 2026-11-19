@@ -208,11 +208,41 @@ export function subscribeMqtt(opts: MqttOptions): MqttSubscription {
     };
   }
 
+  /**
+   * Na web, uma aba em segundo plano tem os timers limitados pelo navegador e pode
+   * perder a conexão. Quando a aba volta a aparecer (ou a internet volta), não
+   * esperamos o próximo intervalo de reconexão: reconectamos na hora.
+   */
+  const wake = () => {
+    if (closed) return;
+    if (typeof document !== 'undefined' && document.visibilityState === 'hidden') return;
+    if (ws) {
+      // Conexão aberta, mas muda há tempo demais (a aba dormiu): derruba para reabrir.
+      if (ws.readyState === 1 && Date.now() - lastRx > keepAlive * 1500) ws.close();
+      return;
+    }
+    if (retryTimer) clearTimeout(retryTimer);
+    retryTimer = null;
+    attempt = 0;
+    open();
+  };
+  const hasDom = typeof document !== 'undefined' && typeof document.addEventListener === 'function';
+  if (hasDom) {
+    document.addEventListener('visibilitychange', wake);
+    window.addEventListener('online', wake);
+    window.addEventListener('focus', wake);
+  }
+
   open();
 
   return {
     close: () => {
       closed = true;
+      if (hasDom) {
+        document.removeEventListener('visibilitychange', wake);
+        window.removeEventListener('online', wake);
+        window.removeEventListener('focus', wake);
+      }
       if (retryTimer) clearTimeout(retryTimer);
       stopPing();
       const sock = ws;

@@ -55,6 +55,14 @@ export function TabButton({
 }
 
 /**
+ * Estilo da área das telas (<TabSlot>). O padrão do expo-router é flexShrink 0:
+ * no celular isso não pesa, mas na web a área cresce até a altura do conteúdo,
+ * empurra a barra de abas para fora da tela e trava a rolagem. Aqui ela ocupa
+ * só o espaço que sobra acima da barra.
+ */
+export const slotStyle: ViewStyle = { flexGrow: 1, flexShrink: 1, flexBasis: 0, minHeight: 0 };
+
+/**
  * Barra de abas flutuante do design (branca, cantos de 26 px, sombra azul).
  * Uso: <TabList asChild><FloatingTabBar>…<TabTrigger/>…</FloatingTabBar></TabList>.
  * Os <TabTrigger> precisam estar escritos direto no layout (o expo-router os

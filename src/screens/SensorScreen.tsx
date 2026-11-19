@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { FlatList, Pressable, View, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native';
+import { FlatList, Platform, Pressable, View, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
 import { useMonitoring, type SensorView } from '@/contexts/MonitoringContext';
@@ -91,12 +91,24 @@ export function SensorScreen() {
     listRef.current?.scrollToOffset({ offset: idx * width, animated: true });
   }, [idx, width]);
 
-  const onSwipe = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+  const pick = (x: number) => {
     if (!width) return;
-    const i = Math.round(e.nativeEvent.contentOffset.x / width);
-    const target = sensors[Math.min(sensors.length - 1, Math.max(0, i))];
+    const i = Math.min(sensors.length - 1, Math.max(0, Math.round(x / width)));
+    const target = sensors[i];
     shown.current = i;
     if (target && target.id !== s.id) selectSensor(target.id);
+  };
+  const onSwipe = (e: NativeSyntheticEvent<NativeScrollEvent>) => pick(e.nativeEvent.contentOffset.x);
+
+  // Na web o onMomentumScrollEnd não existe: esperamos a rolagem parar por um instante e lemos a posição.
+  const settle = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => {
+    if (settle.current) clearTimeout(settle.current);
+  }, []);
+  const onScrollWeb = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const x = e.nativeEvent.contentOffset.x;
+    if (settle.current) clearTimeout(settle.current);
+    settle.current = setTimeout(() => pick(x), 150);
   };
 
   // As leituras vêm da mais nova para a mais antiga; o gráfico vai da mais antiga para agora.
@@ -131,6 +143,8 @@ export function SensorScreen() {
             initialScrollIndex={idx}
             getItemLayout={(_, i) => ({ length: width, offset: width * i, index: i })}
             onMomentumScrollEnd={onSwipe}
+            onScroll={Platform.OS === 'web' ? onScrollWeb : undefined}
+            scrollEventThrottle={Platform.OS === 'web' ? 32 : undefined}
             renderItem={({ item, index }) => (
               <SensorSlide s={item} index={index} total={sensors.length} width={width} onPrev={() => go(-1)} onNext={() => go(1)} />
             )}

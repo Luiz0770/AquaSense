@@ -2,6 +2,7 @@ import React from 'react';
 import type { StyleProp, ViewStyle } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import { glyphs, type IconName } from './icons/glyphs';
+import { svgHidden } from './svgA11y';
 
 export type { IconName };
 
@@ -23,8 +24,7 @@ export function Icon({ name, size = 24, color = '#000', filled, style }: Props) 
       height={size}
       viewBox={g.box}
       style={style}
-      accessible={false}
-      importantForAccessibility="no-hide-descendants"
+      {...svgHidden}
     >
       <Path d={filled && g.fill ? g.fill : g.d} fill={color} />
     </Svg>

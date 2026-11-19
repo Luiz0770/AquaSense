@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { Platform, View } from 'react-native';
 import { Stack, useRootNavigationState, useRouter, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -46,10 +47,18 @@ function AuthGate({ children }: { children: React.ReactNode }) {
   return hide ? <>{children}</> : null;
 }
 
+/**
+ * Na web o app roda dentro de uma coluna com largura de celular, centralizada.
+ * Sem isso, num navegador de computador as telas esticam na largura toda.
+ */
+const WEB_FRAME_MAX = 480;
+
 function Shell() {
   const { palette } = useTheme();
+  const web = Platform.OS === 'web';
   return (
-    <>
+    <View style={{ flex: 1, backgroundColor: web ? palette.line : palette.bg }}>
+      <View style={web ? { flex: 1, width: '100%', maxWidth: WEB_FRAME_MAX, alignSelf: 'center', backgroundColor: palette.bg } : { flex: 1 }}>
       <AuthGate>
         <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: palette.bg } }}>
           <Stack.Screen name="(auth)" />
@@ -60,7 +69,8 @@ function Shell() {
           <Stack.Screen name="relato/[id]" />
         </Stack>
       </AuthGate>
-    </>
+      </View>
+    </View>
   );
 }
 

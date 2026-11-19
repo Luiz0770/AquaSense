@@ -12,6 +12,12 @@ export const LIVE_SOURCE = {
   topic: 'fiap2026/aquasense',
   /** Sem leitura do ESP32 por este tempo, o simulador do app volta a gerar os dados. */
   timeoutMs: 15_000,
+  /**
+   * Keep alive do MQTT. 60 s (em vez de 30) porque, numa aba do navegador em
+   * segundo plano, os timers podem rodar só uma vez por minuto; com 30 s o broker
+   * derrubava a conexão antes do próximo PINGREQ.
+   */
+  keepAliveSec: 60,
 } as const;
 
 export type LiveReading = Pick<Reading, 'sensorId' | 'nivelCm' | 'chuvaMm'>;
@@ -51,6 +57,7 @@ export function connectLiveSource(handlers: {
   const sub = subscribeMqtt({
     url: LIVE_SOURCE.url,
     topic: LIVE_SOURCE.topic,
+    keepAliveSec: LIVE_SOURCE.keepAliveSec,
     onStatus: handlers.onStatus,
     onMessage: (_topic, payload) => {
       const r = parseLivePayload(payload);

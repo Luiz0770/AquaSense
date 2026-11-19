@@ -5,6 +5,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Defs, Line, LinearGradient as SvgLinear, Path, Stop } from 'react-native-svg';
 import { useTheme } from '@/contexts/SettingsContext';
 import { AppText } from './AppText';
+import { svgHidden } from './svgA11y';
 
 /** Gráfico de área do design (sensor ao vivo), com linhas tracejadas dos limiares. */
 export function AreaChart({
@@ -29,7 +30,7 @@ export function AreaChart({
   const line = pts.map((p, i) => `${i ? 'L' : 'M'}${p[0].toFixed(1)} ${p[1].toFixed(1)}`).join(' ');
   const id = `aq${color.replace('#', '')}`;
   return (
-    <Svg width="100%" height={height} viewBox={`0 0 ${W} ${height}`} preserveAspectRatio="none" accessible={false}>
+    <Svg width="100%" height={height} viewBox={`0 0 ${W} ${height}`} preserveAspectRatio="none" {...svgHidden}>
       <Defs>
         <SvgLinear id={id} x1="0" y1="0" x2="0" y2="1">
           <Stop offset="0" stopColor={light} stopOpacity={0.55} />
@@ -128,7 +129,7 @@ export function Sparkline({ data, color, height = 22 }: { data: number[]; color:
   const max = Math.max(30, ...series) * 1.1;
   const d = series.map((v, i) => `${i ? 'L' : 'M'}${((i / (n - 1)) * W).toFixed(1)} ${(height - 2 - (v / max) * (height - 4)).toFixed(1)}`).join(' ');
   return (
-    <Svg width="100%" height={height} viewBox={`0 0 ${W} ${height}`} preserveAspectRatio="none" accessible={false}>
+    <Svg width="100%" height={height} viewBox={`0 0 ${W} ${height}`} preserveAspectRatio="none" {...svgHidden}>
       <Path d={`${d} L${W} ${height} L0 ${height} Z`} fill={color} fillOpacity={0.12} />
       <Path d={d} fill="none" stroke={color} strokeWidth={2} strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
     </Svg>

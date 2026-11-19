@@ -6,7 +6,7 @@ import { useTheme } from '@/contexts/SettingsContext';
 import { LIMITS } from '@/services/iot/thresholds';
 import { chart } from '@/styles/theme';
 import { AppText } from './AppText';
-import { Glow, useLoop } from './motion';
+import { Glow, NATIVE_DRIVER, useLoop } from './motion';
 import { WaveStrip } from './Surfaces';
 
 const fmtN = (n: number) => String(n).replace('.', ',');
@@ -27,7 +27,7 @@ function useSmooth(target: number) {
       v.setValue(target);
       return;
     }
-    const a = Animated.timing(v, { toValue: target, duration: 1200, easing: RISE, useNativeDriver: true });
+    const a = Animated.timing(v, { toValue: target, duration: 1200, easing: RISE, useNativeDriver: NATIVE_DRIVER });
     a.start();
     return () => a.stop();
   }, [target, reduceMotion, v]);

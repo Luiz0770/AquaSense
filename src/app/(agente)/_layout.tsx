@@ -1,7 +1,7 @@
 import React from 'react';
 import { Tabs, TabList, TabSlot, TabTrigger } from 'expo-router/ui';
 import { useMonitoring } from '@/contexts/MonitoringContext';
-import { FloatingTabBar, TabButton } from '@/components/FloatingTabBar';
+import { FloatingTabBar, TabButton, slotStyle } from '@/components/FloatingTabBar';
 
 /** Abas do agente. O número na aba Relatos mostra quantos aguardam revisão. */
 export default function AgenteLayout() {
@@ -9,7 +9,7 @@ export default function AgenteLayout() {
   const pendentes = reports.filter((r) => r.status === 'pendente').length;
   return (
     <Tabs>
-      <TabSlot />
+      <TabSlot style={slotStyle} />
       <TabList asChild>
         <FloatingTabBar>
           <TabTrigger name="painel" href="/painel" asChild>

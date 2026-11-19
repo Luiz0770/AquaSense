@@ -1,12 +1,12 @@
 import React from 'react';
 import { Tabs, TabList, TabSlot, TabTrigger } from 'expo-router/ui';
-import { FloatingTabBar, TabButton } from '@/components/FloatingTabBar';
+import { FloatingTabBar, TabButton, slotStyle } from '@/components/FloatingTabBar';
 
 /** Abas do cidadão. Os TabTrigger ficam aqui, escritos direto, para o expo-router encontrá-los. */
 export default function TabsLayout() {
   return (
     <Tabs>
-      <TabSlot />
+      <TabSlot style={slotStyle} />
       <TabList asChild>
         <FloatingTabBar>
           <TabTrigger name="index" href="/" asChild>
