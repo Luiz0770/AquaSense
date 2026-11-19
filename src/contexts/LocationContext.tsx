@@ -17,9 +17,9 @@ export type { GpsFix, SelectedLocation };
 
 interface LocationValue {
   ready: boolean;
-  /** Local escolhido para alimentar a previsão (nunca o nível da água, que é sempre do sensor PT-07). */
+  /** Local escolhido para alimentar a previsão. O nível da água da tela Início é do Sensor 1 (veja useHomeSensor). */
   selected: SelectedLocation;
-  /** Última posição obtida por GPS, lembrada para ordenar os pontos e bairros por proximidade. */
+  /** Última posição obtida por GPS. */
   lastFix: GpsFix | null;
   selectLocation: (loc: SelectedLocation) => void;
   selectFromGps: (fix: GpsFix) => void;
@@ -41,7 +41,8 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
         loadLastGpsFix(),
       ]);
       if (!alive) return;
-      if (savedLoc) setSelected(savedLoc);
+      // O local padrão antigo ("PT-07 · Ipiranga") virou o Sensor 1.
+      if (savedLoc) setSelected(savedLoc.id === 'pt-07' ? DEFAULT_LOCATION : savedLoc);
       if (savedFix) setLastFix(savedFix);
       setReady(true);
     })();
@@ -70,7 +71,7 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   // Primeiro login depois da instalação: pede a localização atual e a usa como local padrão.
-  // Negou a permissão: segue no ponto PT-07 e não pergunta de novo (o botão da tela "Sua localização" continua valendo).
+  // Negou a permissão: segue no Sensor 1 e não pergunta de novo (o botão da tela "Sua localização" continua valendo).
   // Falha por outro motivo (ex.: GPS desligado): tenta de novo no próximo login.
   const userId = user?.id;
   const askedThisSession = useRef(false);

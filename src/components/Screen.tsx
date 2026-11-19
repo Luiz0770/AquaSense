@@ -6,6 +6,7 @@ import { useRouter } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
 import { useMonitoring } from '@/contexts/MonitoringContext';
 import { useTheme } from '@/contexts/SettingsContext';
+import { sensorById } from '@/data/sensors';
 import { cardShadow, hero as heroTheme } from '@/styles/theme';
 import { AlertBanner } from './AlertBanner';
 import { AppText } from './AppText';
@@ -24,6 +25,8 @@ interface Props {
   /** Tela inicial: cabeçalho e status bar azul-marinho, marca e perfil em branco. */
   hero?: boolean;
   contentStyle?: StyleProp<ViewStyle>;
+  /** Ref da rolagem, para a tela voltar ao topo (ex.: ao escolher um sensor na lista da Simulação). */
+  scrollRef?: React.Ref<ScrollView>;
 }
 
 /** Caminho da tela de canais oficiais para o perfil logado. */
@@ -36,7 +39,7 @@ export function useSourcesHref() {
  * Estrutura das telas logadas, como no design: marca + perfil no topo,
  * aviso de mudança de estado, conteúdo rolável e a faixa de aviso fixa.
  */
-export function Screen({ children, notice = false, back = false, backLabel = 'Voltar', hero = false, contentStyle }: Props) {
+export function Screen({ children, notice = false, back = false, backLabel = 'Voltar', hero = false, contentStyle, scrollRef }: Props) {
   const { palette, settings, dismissNotice } = useTheme();
   const { user } = useAuth();
   const { banner, dismissBanner, sourceLabel } = useMonitoring();
@@ -89,6 +92,7 @@ export function Screen({ children, notice = false, back = false, backLabel = 'Vo
         </View>
 
         <ScrollView
+          ref={scrollRef}
           style={[styles.root, { backgroundColor: palette.bg }]}
           contentContainerStyle={{ paddingTop: 6, paddingHorizontal: 16, paddingBottom: 20 }}
           keyboardShouldPersistTaps="handled"
@@ -132,6 +136,7 @@ export function Screen({ children, notice = false, back = false, backLabel = 'Vo
             <AlertBanner
               level={banner.para}
               nivelCm={banner.nivelCm}
+              sensorName={sensorById(banner.sensorId).nome}
               onClose={dismissBanner}
               onSources={() => {
                 dismissBanner();

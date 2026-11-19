@@ -1,7 +1,7 @@
 import React from 'react';
 import { View } from 'react-native';
 import { useAuth } from '@/contexts/AuthContext';
-import { useMonitoring } from '@/contexts/MonitoringContext';
+import { useHomeSensor } from '@/hooks/useHomeSensor';
 import { useTheme } from '@/contexts/SettingsContext';
 import type { FontSize } from '@/types';
 import { fontScaleBySize, gradients, levelStyle, stage } from '@/styles/theme';
@@ -22,7 +22,7 @@ const fmtN = (n: number) => String(n).replace('.', ',');
 
 export default function PerfilScreen() {
   const { user, signOut } = useAuth();
-  const { current, level } = useMonitoring();
+  const { current, level, nome } = useHomeSensor();
   const { settings, setFontSize, setHighContrast, setReduceMotion } = useTheme();
   const isAgent = user?.role === 'agente';
 
@@ -73,7 +73,7 @@ export default function PerfilScreen() {
       <SwitchRow icon="animation" label="Reduzir movimento" value={settings.reduceMotion} onChange={setReduceMotion} />
 
       <DashedNote icon={levelStyle[level].icon} iconColor={levelStyle[level].fg}>
-        {`Prévia: nível da água ${fmtN(current.nivelCm)} cm · ${levelStyle[level].label}`}
+        {`Prévia: ${nome} · ${fmtN(current.nivelCm)} cm · ${levelStyle[level].label}`}
       </DashedNote>
       <AppText size={14} muted style={{ paddingHorizontal: 4 }}>
         Preferências salvas neste aparelho.

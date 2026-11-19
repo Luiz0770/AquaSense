@@ -1,31 +1,13 @@
-import type { Reading, Scenario } from '@/types';
 import { getItem, setItem, StorageKeys } from './storage';
-import { initialReading } from './iot/simulator';
+import { normalizeSensorStore, toSaved, type SensorStore } from './iot/sensorStore';
 
-export const MAX_READINGS = 100;
+export { MAX_READINGS_PER_SENSOR as MAX_READINGS } from './iot/sensorStore';
 
-/** Leituras guardadas, da mais nova para a mais antiga. */
-export async function loadReadings(): Promise<Reading[]> {
-  const list = await getItem<Reading[]>(StorageKeys.readings, []);
-  return list.length > 0 ? list : [initialReading()];
+/** Leituras, cenário e pausa de cada sensor. Dados do simulador antigo são descartados (veja sensorStore). */
+export async function loadSensorStore(): Promise<SensorStore> {
+  return normalizeSensorStore(await getItem<unknown>(StorageKeys.sensors, null));
 }
 
-export async function saveReadings(readings: Reading[]): Promise<void> {
-  await setItem(StorageKeys.readings, readings.slice(0, MAX_READINGS));
-}
-
-export function loadScenario(): Promise<Scenario> {
-  return getItem<Scenario>(StorageKeys.scenario, 'moderada');
-}
-
-export function saveScenario(s: Scenario): Promise<void> {
-  return setItem(StorageKeys.scenario, s);
-}
-
-export function loadRunning(): Promise<boolean> {
-  return getItem<boolean>(StorageKeys.running, true);
-}
-
-export function saveRunning(r: boolean): Promise<void> {
-  return setItem(StorageKeys.running, r);
+export function saveSensorStore(store: SensorStore): Promise<void> {
+  return setItem(StorageKeys.sensors, toSaved(store));
 }

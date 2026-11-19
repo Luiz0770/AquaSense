@@ -11,7 +11,7 @@ const cache = new Map<string, { data: Forecast; at: number }>();
 
 /**
  * Previsão real (Open-Meteo) no local escolhido pela pessoa (tela "Sua localização"),
- * com fallback automático e seguro para o padrão (PT-07) enquanto o local salvo carrega.
+ * com fallback automático e seguro para o padrão (Sensor 1) enquanto o local salvo carrega.
  */
 export function useForecast() {
   const { ready, selected } = useAppLocation();

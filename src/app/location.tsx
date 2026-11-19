@@ -316,7 +316,7 @@ export default function LocationScreen() {
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, padding: 14, borderRadius: 20, borderWidth: 1, borderColor: palette.line, backgroundColor: palette.surface }}>
         <Icon name="shield" size={26 * fontScale} color={palette.accent} />
         <AppText size={14} muted style={{ flex: 1 }}>
-          Guardamos só as suas últimas buscas, neste aparelho. O nível da água continua vindo do sensor PT-07.
+          Guardamos só as suas últimas buscas, neste aparelho. O nível da água da Início vem do Sensor 1.
         </AppText>
       </View>
     </Screen>

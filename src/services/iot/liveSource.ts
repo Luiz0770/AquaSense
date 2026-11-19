@@ -1,5 +1,5 @@
 import type { Reading } from '@/types';
-import { pilotPoint } from '@/data/pilotPoint';
+import { DEFAULT_SENSOR_ID, resolveSensorId } from '@/data/sensors';
 import { subscribeMqtt, type MqttStatus } from './mqttLite';
 
 /**
@@ -20,9 +20,10 @@ const num = (v: unknown, min: number, max: number): number | null =>
   typeof v === 'number' && Number.isFinite(v) && v >= min && v <= max ? Math.round(v * 10) / 10 : null;
 
 /**
- * Aceita só o JSON esperado do ESP32:
- * { "sensorId": "ESP32-01", "nivelCm": 12.3, "chuvaMm": 4.5, ... }.
- * Qualquer outra coisa (texto, faixa absurda, campo faltando) é descartada.
+ * Aceita só o JSON esperado do ESP32, uma mensagem por sensor:
+ * { "sensorId": "sensor-2", "nivelCm": 12.3, "chuvaMm": 4.5, ... }.
+ * Sem sensorId (firmware antigo, de 1 sensor) vale como Sensor 1; ids antigos (ESP32-01, PT-xx) são convertidos.
+ * Sensor desconhecido ou qualquer outra coisa (texto, faixa absurda, campo faltando) é descartado.
  */
 export function parseLivePayload(text: string): LiveReading | null {
   if (text.length > 1024) return null;
@@ -37,8 +38,8 @@ export function parseLivePayload(text: string): LiveReading | null {
   const nivelCm = num(o.nivelCm, 0, 400);
   const chuvaMm = num(o.chuvaMm, 0, 300);
   if (nivelCm === null || chuvaMm === null) return null;
-  const sensorId =
-    typeof o.sensorId === 'string' && /^[\w-]{1,32}$/.test(o.sensorId) ? o.sensorId : pilotPoint.sensorId;
+  const sensorId = o.sensorId === undefined ? DEFAULT_SENSOR_ID : resolveSensorId(o.sensorId);
+  if (!sensorId) return null;
   return { sensorId, nivelCm, chuvaMm };
 }
 

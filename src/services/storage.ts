@@ -10,6 +10,8 @@ export const StorageKeys = {
   users: 'users',
   session: 'session',
   readings: 'readings',
+  /** Leituras, cenário e pausa de cada sensor (substitui readings/scenario/running). */
+  sensors: 'sensors',
   alerts: 'alerts',
   reports: 'reports',
   reportsSeeded: 'reports-seeded',

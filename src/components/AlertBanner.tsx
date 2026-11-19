@@ -19,11 +19,14 @@ const fmtN = (n: number) => String(n).replace('.', ',');
 export function AlertBanner({
   level,
   nivelCm,
+  sensorName,
   onClose,
   onSources,
 }: {
   level: Level;
   nivelCm: number;
+  /** Sensor que mudou de faixa (ex.: "Sensor 2"). */
+  sensorName: string;
   onClose: () => void;
   onSources: () => void;
 }) {
@@ -51,7 +54,7 @@ export function AlertBanner({
         <LevelBadge level={level} size={46} iconSize={26} radius={16} />
         <View style={{ flex: 1 }}>
           <AppText font="display" size={17} color={palette.shadows ? l.fg : palette.ink} lh={1.3}>
-            {`${l.label} · ${fmtN(nivelCm)} cm`}
+            {`${sensorName} · ${l.label} · ${fmtN(nivelCm)} cm`}
           </AppText>
           <AppText size={14} lh={1.3} muted>
             {`Estimativa não oficial · ${sourceLabel}`}

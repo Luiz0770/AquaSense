@@ -1,6 +1,6 @@
 import { DIAS, type DayForecast, type ForecastIcon, type HourForecast } from '@/data/forecast';
 
-/** Ponto PT-07 (Ipiranga/SP), ajustável por EXPO_PUBLIC_WEATHER_LAT/LON sem alterar código. */
+/** Coordenadas padrão do Sensor 1 (Ipiranga/SP), ajustável por EXPO_PUBLIC_WEATHER_LAT/LON sem alterar código. */
 export const WEATHER_LAT = Number(process.env.EXPO_PUBLIC_WEATHER_LAT) || -23.587;
 export const WEATHER_LON = Number(process.env.EXPO_PUBLIC_WEATHER_LON) || -46.61;
 

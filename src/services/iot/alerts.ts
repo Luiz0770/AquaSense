@@ -11,6 +11,7 @@ export function buildAlert(de: Level, para: Level, reading: Reading): AlertEvent
     : `Voltou para ${levelLabel[para]}, com ${reading.nivelCm} cm.`;
   return {
     id: makeId('a'),
+    sensorId: reading.sensorId,
     timestamp: reading.timestamp,
     de,
     para,

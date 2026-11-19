@@ -25,10 +25,13 @@ export interface Reading {
   timestamp: string;
 }
 
-export type Scenario = 'sem_chuva' | 'moderada' | 'forte';
+/** Cenário da simulação: 'real' usa a chuva da Open-Meteo; os outros fixam o sensor numa faixa. */
+export type Scenario = 'real' | 'sem_chuva' | 'moderada' | 'forte' | 'extrema';
 
 export interface AlertEvent {
   id: string;
+  /** Sensor que mudou de faixa (alertas antigos, sem este campo, são do Sensor 1). */
+  sensorId?: string;
   /** ISO 8601 */
   timestamp: string;
   de: Level;

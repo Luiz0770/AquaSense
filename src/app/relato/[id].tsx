@@ -5,6 +5,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '@/contexts/AuthContext';
 import { useMonitoring } from '@/contexts/MonitoringContext';
+import { useHomeSensor } from '@/hooks/useHomeSensor';
 import { useTheme } from '@/contexts/SettingsContext';
 import { kindIcon } from '@/data/reportKinds';
 import { formatDateTime, formatTime } from '@/utils/format';
@@ -123,7 +124,8 @@ export default function RelatoDetalheScreen() {
   const router = useRouter();
   const { user } = useAuth();
   const { palette, fontScale } = useTheme();
-  const { reports, reviewReport, current, level } = useMonitoring();
+  const { reports, reviewReport, selectSensor } = useMonitoring();
+  const { id: homeId, nome: homeName, current, level } = useHomeSensor();
   const [viewer, setViewer] = useState(false);
 
   const report = reports.find((r) => r.id === id);
@@ -231,16 +233,19 @@ export default function RelatoDetalheScreen() {
         style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12, paddingHorizontal: 14, borderRadius: 22 }}
       >
         <IconBadge icon={risk.icon} colors={risk.grad} size={42} iconSize={24} radius={14} filled />
-        <View style={{ flex: 1 }} accessible accessibilityLabel={`Agora no sensor PT-07: ${fmtN(current.nivelCm)} centímetros, ${risk.label}`}>
+        <View style={{ flex: 1 }} accessible accessibilityLabel={`Agora no ${homeName}: ${fmtN(current.nivelCm)} centímetros, ${risk.label}`}>
           <AppText size={14} color={stage.muted}>
-            Agora no sensor PT-07
+            {`Agora no ${homeName}`}
           </AppText>
           <AppText font="display" weight={700} color="#FFFFFF">{`${fmtN(current.nivelCm)} cm · ${risk.label}`}</AppText>
         </View>
         <Pressable
-          onPress={() => router.push(sensorHref)}
+          onPress={() => {
+            selectSensor(homeId);
+            router.push(sensorHref);
+          }}
           accessibilityRole="button"
-          accessibilityLabel="Abrir o sensor PT-07"
+          accessibilityLabel={`Abrir o ${homeName}`}
           style={({ pressed }) => [
             { width: 48, height: 48, borderRadius: 16, borderWidth: 1, borderColor: 'rgba(255,255,255,0.3)', backgroundColor: 'rgba(255,255,255,0.12)', alignItems: 'center', justifyContent: 'center' },
             pressed && { opacity: 0.7 },

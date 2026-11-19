@@ -119,3 +119,18 @@ export function BarChart({
     </View>
   );
 }
+
+/** Linha curta com as últimas leituras de um sensor (cards do painel do agente). */
+export function Sparkline({ data, color, height = 22 }: { data: number[]; color: string; height?: number }) {
+  const W = 120;
+  const series = data.length >= 2 ? data : [data[0] ?? 0, data[0] ?? 0];
+  const n = series.length;
+  const max = Math.max(30, ...series) * 1.1;
+  const d = series.map((v, i) => `${i ? 'L' : 'M'}${((i / (n - 1)) * W).toFixed(1)} ${(height - 2 - (v / max) * (height - 4)).toFixed(1)}`).join(' ');
+  return (
+    <Svg width="100%" height={height} viewBox={`0 0 ${W} ${height}`} preserveAspectRatio="none" accessible={false}>
+      <Path d={`${d} L${W} ${height} L0 ${height} Z`} fill={color} fillOpacity={0.12} />
+      <Path d={d} fill="none" stroke={color} strokeWidth={2} strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
+    </Svg>
+  );
+}

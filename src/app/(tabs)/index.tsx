@@ -5,6 +5,7 @@ import Svg, { Defs, RadialGradient, Rect, Stop } from 'react-native-svg';
 import { useRouter } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
 import { useMonitoring } from '@/contexts/MonitoringContext';
+import { useHomeSensor } from '@/hooks/useHomeSensor';
 import { useAppLocation } from '@/contexts/LocationContext';
 import { useTheme } from '@/contexts/SettingsContext';
 import { forecastIcon, liveHourFromRain } from '@/data/forecast';
@@ -18,7 +19,6 @@ import { depthOf, HERO_H, LevelScene } from '@/components/LevelScene';
 import { Icon, type IconName } from '@/components/Icon';
 import { Screen } from '@/components/Screen';
 import { Card, Gradient } from '@/components/Surfaces';
-import type { Reading } from '@/types';
 
 const fmtN = (n: number) => String(n).replace('.', ',');
 const pad = (n: number) => String(n).padStart(2, '0');
@@ -41,28 +41,19 @@ function InfoPill({ icon, label }: { icon: IconName; label: string }) {
   );
 }
 
-/** Tendência comparando com a leitura de uns 20 s atrás. */
-function trendOf(readings: Reading[]) {
-  const last = readings[0];
-  const prev = readings[Math.min(4, readings.length - 1)];
-  const d = last.nivelCm - prev.nivelCm;
-  if (d > 1.5) return { icon: 'trending_up' as const, label: 'Subindo' };
-  if (d < -1.5) return { icon: 'trending_down' as const, label: 'Descendo' };
-  return { icon: 'trending_flat' as const, label: 'Estável' };
-}
-
 type FcTab = 'horas' | 'dias';
 
 export default function InicioScreen() {
   const router = useRouter();
+  const { selectSensor } = useMonitoring();
   const { user } = useAuth();
   const { palette, fontScale } = useTheme();
-  const { current, level, readings, source, sourceLabel } = useMonitoring();
+  const { id: sensorId, current, level, trend, source, nome: sensorName } = useHomeSensor();
+  const sourceLabel = source === 'esp32' ? `${sensorName} · ESP32` : `${sensorName} · simulado`;
   const { selected } = useAppLocation();
   const [fcTab, setFcTab] = useState<FcTab>('horas');
   const { data: forecast, loading: fcLoading, error: fcError } = useForecast();
   const risk = levelStyle[level];
-  const trend = trendOf(readings);
   const firstName = (user?.name ?? '').split(' ')[0] || 'Olá';
 
   // Com o ESP32 (Wokwi) ao vivo, o "Em 1 h" segue a chuva medida pelo sensor (e pelo Node-RED).
@@ -122,7 +113,7 @@ export default function InicioScreen() {
 
           <View
             accessible
-            accessibilityLabel={`Nível da água na rua: ${fmtN(current.nivelCm)} centímetros. ${trend.label}, ${formatTime(current.timestamp)}, ${source === 'esp32' ? 'leitura do sensor ESP32' : 'leitura simulada'}.`}
+            accessibilityLabel={`Nível da água na rua: ${fmtN(current.nivelCm)} centímetros. ${trend.label}, ${formatTime(current.timestamp)}, ${source === 'esp32' ? `leitura do ${sensorName} (ESP32)` : `leitura simulada do ${sensorName}`}.`}
             style={{ gap: 2, alignSelf: 'flex-start' }}
           >
             <AppText size={15} weight={700} color={stage.muted}>
@@ -293,7 +284,10 @@ export default function InicioScreen() {
 
       <View style={{ gap: 10 }}>
         <View style={{ flexDirection: 'row', gap: 10 }}>
-          <ShortcutTile label="Sensor ao vivo" icon="sensors" colors={gradients.sensor} onPress={() => router.push('/sensor')} />
+          <ShortcutTile label="Sensor ao vivo" icon="sensors" colors={gradients.sensor} onPress={() => {
+              selectSensor(sensorId);
+              router.push('/sensor');
+            }} />
           <ShortcutTile label="Histórico" icon="insights" colors={gradients.history} onPress={() => router.push('/historico')} />
         </View>
         <View style={{ flexDirection: 'row', gap: 10 }}>
