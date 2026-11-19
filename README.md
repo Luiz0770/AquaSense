@@ -140,3 +140,6 @@ Prints do app (pasta `docs/prints/`).
 |---|---|
 | Luiz Felipe Coelho Ramos | 555074 |
 | Vitor Musolino Teixeira | 555012 |
+| Fernando Alexandre | 555045 |
+| Gabriel Vallejo | 554973 |
+| Lucas Dias | 555450 |
