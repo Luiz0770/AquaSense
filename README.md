@@ -134,6 +134,9 @@ Prints do app (pasta `docs/prints/`).
 | --- | --- |
 | ![Simulação](assets/prints/10-simulacao.jpeg) | ![Perfil](assets/prints/12-perfil.jpeg) |
 
-## Entrega
+## Integrantes
 
-Vídeo (até 3 min): _adicionar link_ · Registro de prompts: [prompts.md](prompts.md)
+| Nome | RM |
+|---|---|
+| Luiz Felipe Coelho Ramos | 555074 |
+| Vitor Musolino Teixeira | 555012 |
